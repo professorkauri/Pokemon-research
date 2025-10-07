@@ -83,7 +83,7 @@
         s.rel = 'stylesheet';
         s.href = 'style.css?cb=' + Date.now();
         document.head.appendChild(s);
-        
+
         /* =======================
            Data & Utilities
            ======================= */
@@ -110,20 +110,58 @@
             return (isNaN(da) ? 0 : da) - (isNaN(db) ? 0 : db);
         }
 
+        function debounce(fn, wait = 250) {
+        let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), wait); };
+        }
+        const refreshLeftList = debounce(() => renderAdminLeftList(), 250);
+
         function pkmnImageNameFromId(id) {
             const s = String(id ?? "").trim();
             if (/^\d+$/.test(s)) return s.padStart(4, "0");
             return s;
         }
 
-        function setPreviewIfExists(url, el) {
-            if (!url) { el.style.backgroundImage = "none"; return; }
-            const test = url + (url.includes("?") ? "&" : "?") + "cb=" + Date.now();
-            const img = new Image();
-            img.onload = () => { el.style.backgroundImage = `url("${test}")` };
-            img.onerror = () => { el.style.backgroundImage = "none" };
-            img.src = test;
+        // ---------- image loading (memo + lazy) ----------
+        const IMG_STATUS = new Map(); // url -> "ok" | "err"
+
+        function applyBg(el, url) {
+        if (!url) { el.style.backgroundImage = "none"; return; }
+        el.style.backgroundImage = `url("${url}")`;
         }
+
+        function loadBgOnce(url, onOk, onErr) {
+        const status = IMG_STATUS.get(url);
+        if (status === "ok") { onOk(); return; }
+        if (status === "err") { onErr(); return; }
+        const img = new Image();
+        img.onload = () => { IMG_STATUS.set(url, "ok"); onOk(); };
+        img.onerror = () => { IMG_STATUS.set(url, "err"); onErr(); };
+        img.src = url; // no cache-busting here – allow browser cache
+        }
+
+        // IntersectionObserver: load when near viewport
+        const lazyIO = new IntersectionObserver((entries) => {
+        for (const e of entries) {
+            if (!e.isIntersecting) continue;
+            const el = e.target;
+            lazyIO.unobserve(el);
+            const url = el.dataset.bg || "";
+            if (!url) return;
+            loadBgOnce(
+            url,
+            () => applyBg(el, url),
+            () => { el.style.backgroundImage = "none"; }
+            );
+        }
+        }, { root: null, rootMargin: "300px", threshold: 0.01 });
+
+        function lazyBg(el, url) {
+        if (!url) { el.style.backgroundImage = "none"; return; }
+        el.dataset.bg = url;
+        // Optional: low-cost placeholder stays until loaded
+        lazyIO.observe(el);
+        }
+
 
         function fixJsonText(text) {
             text = text.replace(/:\s*NaN\b/g, ": null");
@@ -200,20 +238,21 @@
             return out;
         }
 
-        async function loadInitialData() {
-            try {
-                const res = await fetch("./data.json?cb=" + Date.now(), { cache: "no-store" });
-                if (!res.ok) throw new Error("HTTP " + res.status);
-                let raw = await res.text();
-                let json;
-                try { json = JSON.parse(raw); } catch { raw = fixJsonText(raw); json = JSON.parse(raw); }
-                DATA = Array.isArray(json) ? normalizeData({ pokemon: json, games: [] }) : normalizeData(json);
-            } catch (e) {
-                console.warn("Could not auto-load data.json. Use Import JSON if opening via file://", e);
-            }
-            updateDatasetSummary();
-            renderMain();
-        }
+async function loadInitialData() {
+    try {
+      const res = await fetch("./data.json"); // allow normal HTTP caching on GitHub Pages
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      let raw = await res.text();
+      let json;
+      try { json = JSON.parse(raw); } catch { raw = fixJsonText(raw); json = JSON.parse(raw); }
+      DATA = Array.isArray(json) ? normalizeData({ pokemon: json, games: [] }) : normalizeData(json);
+    } catch (e) {
+      console.warn("Could not auto-load data.json. Use Import JSON if opening via file://", e);
+    }
+    updateDatasetSummary();
+    renderMain();
+  }
+  
 
         /* =======================
            Main Views
@@ -256,7 +295,7 @@
             for (const p of list) {
                 const card = document.createElement("div"); card.className = "card";
                 const img = document.createElement("div"); img.className = "img";
-                setPreviewIfExists(`images/pkmn/${encodeURIComponent(p.id)}.png`, img);
+                lazyBg(`images/pkmn/${encodeURIComponent(p.id)}.webp`);
                 const title = document.createElement("div");
                 title.innerHTML = `<strong>${safeHtml(p.name || "(Unnamed)")}</strong> <span class="muted">${safeHtml(p.form || "")}</span>`;
                 const meta = document.createElement("div");
@@ -276,7 +315,7 @@
                 const card = document.createElement("div"); card.className = "card";
                 const img = document.createElement("div"); img.className = "game-img";
                 if (g.imageSlug) {
-                    setPreviewIfExists(`images/games/${encodeURIComponent(g.imageSlug)}.png`, img);
+                    lazyBg(`images/games/${encodeURIComponent(g.imageSlug)}.webp`);
                 } else {
                     img.style.backgroundImage = "none";
                 }
@@ -380,7 +419,7 @@
 
                     const header = document.createElement("div"); header.className = "result-header";
                     const img = document.createElement("div"); img.className = "result-img";
-                    setPreviewIfExists(`images/pkmn/${encodeURIComponent(p.id)}.png`, img);
+                    lazyBg(`images/pkmn/${encodeURIComponent(p.id)}.webp`);
                     const title = document.createElement("div");
                     const form = p.form ? ` <span class="muted">• ${safeHtml(p.form)}</span>` : "";
                     title.innerHTML = `<strong>${safeHtml(p.name || "(Unnamed)")}</strong>${form}<div class="muted">#${safeHtml(p.id)} • ${safeHtml([p.type1, p.type2].filter(Boolean).join(" / ") || "—")}</div>`;
@@ -482,7 +521,7 @@
                 gameSortMode = (gameSortMode === "AZ") ? "DATE" : "AZ";
                 sortBtn.textContent = (gameSortMode === "AZ") ? "A–Z" : "Date";
             }
-            renderAdminLeftList();
+            refreshLeftList();
         });
 
         viewTabs.addEventListener("click", (e) => {
@@ -493,7 +532,7 @@
             selectedId = null; leftFilter = ""; leftSearch.value = ""; renderAdminView();
         });
 
-        leftSearch.addEventListener("input", () => { leftFilter = leftSearch.value.trim().toLowerCase(); renderAdminLeftList(); });
+        leftSearch.addEventListener("input", () => { leftFilter = leftSearch.value.trim().toLowerCase(); refreshLeftList(); });
         addBtn.addEventListener("click", () => {
             if (adminActiveView === "pokemon") {
                 const p = { id: "", name: "", form: "", species: "", evolution: "", type1: "", type2: "", hp: null, attack: null, defense: null, spAtk: null, spDef: null, speed: null, pokedex: {} };
@@ -532,7 +571,7 @@
                 ? (pokemonSortMode === "AZ" ? "A–Z" : "0–9")
                 : (gameSortMode === "AZ" ? "A–Z" : "Date");
 
-            renderAdminLeftList();
+                refreshLeftList();
             renderAdminRight();
         }
 
@@ -579,12 +618,13 @@
                 thumb.classList.add("list_thumb");
 
                 if (adminActiveView === "pokemon") {
-                    const id = (item.id || "").trim();
-                    if (id) setPreviewIfExists(`images/pkmn/${encodeURIComponent(id)}.png`, thumb);
+                const id = (item.id || "").trim();
+                if (id) lazyBg(thumb, `images/pkmn/${encodeURIComponent(id)}.webp`);
                 } else {
-                    const slug = (item.imageSlug || "").trim();
-                    if (slug) setPreviewIfExists(`images/games/${encodeURIComponent(slug)}.png`, thumb);
+                const slug = (item.imageSlug || "").trim();
+                if (slug) lazyBg(thumb, `images/games/${encodeURIComponent(slug)}.webp`);
                 }
+
 
                 const left = document.createElement("div");
                 left.style.display = "grid";
@@ -621,7 +661,7 @@
 
                 div.appendChild(left);
                 div.appendChild(right);
-                div.addEventListener("click", () => { selectedId = itemId; renderAdminView(); });
+                div.addEventListener("click", () => { selectedId = itemId; renderAdminRight(); });
                 list.appendChild(div);
             }
         }
@@ -673,24 +713,25 @@
                 const prevBox = document.createElement("div");
                 prevBox.className = "field";
                 const prevLabel = document.createElement("label");
-                prevLabel.textContent = "Image Preview (images/pkmn/ID.png — case sensitive)";
+                prevLabel.textContent = "Image Preview (images/pkmn/ID.webp — case sensitive)";
                 const prev = document.createElement("div");
                 prev.className = "img-preview";
                 prevBox.appendChild(prevLabel);
                 prevBox.appendChild(prev);
                 basicGrid.appendChild(prevBox);
 
-                function updatePrev() {
-                    const id = (p.id || "").trim();
-                    const url = id ? `images/pkmn/${encodeURIComponent(id)}.png` : "";
-                    setPreviewIfExists(url, prev);
-                }
+                function updateGamePrev() {
+  const slug = (g.imageSlug || "").trim();
+  const url = slug ? `images/games/${encodeURIComponent(slug)}.webp` : "";
+  if (!url) { gPrev.style.backgroundImage = "none"; return; }
+  loadBgOnce(url, () => applyBg(gPrev, url), () => { gPrev.style.backgroundImage = "none"; });
+}
 
                 // ID
                 basicGrid.appendChild(
                     makeField("ID", "text", p.id ?? "", (val) => {
                         p.id = val;
-                        renderAdminLeftList();
+                        refreshLeftList();
                         updatePrev();
                     }).container
                 );
@@ -700,7 +741,7 @@
                     makeField("Name", "text", p.name ?? "", (val) => {
                         p.name = val;
                         rightTitle.textContent = p.name || "(new Pokémon)";
-                        renderAdminLeftList();
+                        refreshLeftList();
                     }).container
                 );
 
@@ -708,7 +749,7 @@
                 basicGrid.appendChild(
                     makeField("Form", "text", p.form ?? "", (val) => {
                         p.form = val;
-                        renderAdminLeftList();
+                        refreshLeftList();
                     }).container
                 );
 
@@ -820,8 +861,8 @@
                 const wrap = document.createElement("div"); wrap.className = "field-grid";
 
                 // Title / Release / Console
-                wrap.appendChild(makeField("Title", "text", g.title, (val) => { g.title = val; rightTitle.textContent = g.title || "(untitled game)"; renderAdminLeftList(); }).container);
-                wrap.appendChild(makeField("Release Date", "date", g.releaseDate, (val) => { g.releaseDate = val; renderAdminLeftList(); }).container);
+                wrap.appendChild(makeField("Title", "text", g.title, (val) => { g.title = val; rightTitle.textContent = g.title || "(untitled game)"; refreshLeftList(); }).container);
+                wrap.appendChild(makeField("Release Date", "date", g.releaseDate, (val) => { g.releaseDate = val; refreshLeftList(); }).container);
                 wrap.appendChild(makeField("Console", "text", g.console, (val) => { g.console = val; }).container);
 
                 // === Theme Colour: synced picker + hex input ===
@@ -856,7 +897,7 @@
                             g.colorHex = norm;
                             pick.value = norm;
                             hex.style.borderColor = "var(--border)";
-                            renderAdminLeftList();
+                            refreshLeftList();
                         } else {
                             // visual hint if invalid
                             hex.style.borderColor = "var(--danger)";
@@ -868,7 +909,7 @@
                         g.colorHex = v;
                         hex.value = v.toUpperCase();
                         hex.style.borderColor = "var(--border)";
-                        renderAdminLeftList();
+                        refreshLeftList();
                     });
 
                     row.appendChild(pick);
@@ -886,7 +927,7 @@
                 })();
 
                 // === Image slug + preview (preview LEFT of field) ===
-                const slugField = makeField("Image Slug (images/games/slug.png)", "text", g.imageSlug, (val) => { g.imageSlug = val; updateGamePrev(); renderAdminLeftList(); });
+                const slugField = makeField("Image Slug (images/games/slug.webp)", "text", g.imageSlug, (val) => { g.imageSlug = val; updateGamePrev(); refreshLeftList(); });
                 const slugRow = document.createElement("div");
                 slugRow.className = "row";
                 const gPrev = document.createElement("div");
@@ -903,8 +944,8 @@
 
                 function updateGamePrev() {
                     const slug = (g.imageSlug || "").trim();
-                    const url = slug ? `images/games/${encodeURIComponent(slug)}.png` : "";
-                    setPreviewIfExists(url, gPrev);
+                    const url = slug ? `images/games/${encodeURIComponent(slug)}.webp` : "";
+                    lazyBg(url, gPrev);
                 }
 
                 body.appendChild(wrap);
