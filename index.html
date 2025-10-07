@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <title>Pokemon Research</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="style.css?v=2025-10-07-1" />
 </head>
 
 <body class="theme-light">
@@ -79,6 +79,11 @@
     </div>
 
     <script>
+        const s = document.createElement('link');
+        s.rel = 'stylesheet';
+        s.href = 'style.css?cb=' + Date.now();
+        document.head.appendChild(s);
+        
         /* =======================
            Data & Utilities
            ======================= */
