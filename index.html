@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="style.css" />
 </head>
 
-<body>
+<body class="theme-light">
     <header>
         <div class="brand">Pokemon Research</div>
 
@@ -571,12 +571,7 @@
 
                 // Thumb (small image on the left)
                 const thumb = document.createElement("div");
-                thumb.style.width = "28px";
-                thumb.style.height = "28px";
-                thumb.style.border = "1px solid var(--border)";
-                thumb.style.borderRadius = "6px";
-                thumb.style.background = "#10142a center/contain no-repeat";
-                thumb.style.marginRight = "8px";
+                thumb.classList.add("list_thumb");
 
                 if (adminActiveView === "pokemon") {
                     const id = (item.id || "").trim();
