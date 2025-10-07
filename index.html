@@ -75,6 +75,22 @@
                     </div>
                 </div>
             </div>
+
+        </div>
+    </div>
+
+    <!-- Public Pokémon Details Overlay -->
+    <div class="overlay" id="pkmnOverlay" aria-hidden="true">
+        <div class="admin-window" role="dialog" aria-modal="true" aria-label="Pokémon details" style="max-width:960px;">
+            <div class="admin-header">
+                <div class="admin-title" id="pkmnOverlayTitle">Pokémon</div>
+                <div class="toolbar">
+                    <button id="pkmnOverlayClose" class="btn">Close</button>
+                </div>
+            </div>
+            <div class="right-body" id="pkmnOverlayBody">
+                <!-- filled dynamically -->
+            </div>
         </div>
     </div>
 
@@ -91,6 +107,21 @@
         const DEFAULT_DATA = { games: [], pokemon: [] };
         let DATA = structuredClone(DEFAULT_DATA);
 
+        function typeToken(v) { return String(v || "").trim().toLowerCase(); }
+
+        function setTypeData(el, pkmn) {
+            const t1 = String(pkmn.type1 || "").trim().toLowerCase();
+            const t2 = String(pkmn.type2 || "").trim().toLowerCase() || t1;
+            if (t1) el.setAttribute("data-type1", t1); else el.removeAttribute("data-type1");
+            if (t2) el.setAttribute("data-type2", t2); else el.removeAttribute("data-type2");
+        }
+
+        function setTypeDataAttr(el, attr, value) {
+            const v = String(value || "").trim().toLowerCase();
+            if (v) el.setAttribute(attr, v);
+            else el.removeAttribute(attr);
+        }
+
         let adminActiveView = "pokemon";
         let selectedId = null;
         let leftFilter = "";
@@ -104,6 +135,16 @@
 
 
         function safeHtml(str) { return String(str ?? "").replace(/[&<>"']/g, s => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[s])) }
+        function escapeRegExp(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+        // Returns HTML with <mark class="hl">…</mark> around matches (case-insensitive), safely escaped
+        function highlightHTML(text, query) {
+            const src = String(text ?? "");
+            const q = String(query ?? "").trim();
+            if (!q) return safeHtml(src);
+            const escaped = safeHtml(src);
+            const re = new RegExp("(" + escapeRegExp(q) + ")", "ig");
+            return escaped.replace(re, '<mark class="hl">$1</mark>');
+        }
         function numberOrNull(v) { const n = Number(v); return isNaN(n) ? null : n }
         function numOrNullFromInput(v) { if (v === "" || v === null || v === undefined) return null; const n = Number(v); return isNaN(n) ? null : n }
         function updateDatasetSummary() { document.getElementById("datasetSummary").textContent = `${DATA.pokemon.length} Pokémon • ${DATA.games.length} Games` }
@@ -257,6 +298,163 @@
             renderMain();
         }
 
+        /* =======================
+   Pokémon Overlay (public)
+   ======================= */
+        const pkmnOverlay = document.getElementById("pkmnOverlay");
+        const pkmnOverlayBody = document.getElementById("pkmnOverlayBody");
+        const pkmnOverlayTitle = document.getElementById("pkmnOverlayTitle");
+        const pkmnOverlayCloseBtn = document.getElementById("pkmnOverlayClose");
+
+        function openPokemonOverlay(p) {
+            // Title
+            pkmnOverlayTitle.textContent = p.name || "(Pokémon)";
+
+            // Build content (mirror the admin grouping, but read-only)
+            const wrap = document.createElement("div");
+            wrap.style.display = "grid";
+            wrap.style.gap = "16px";
+
+            // BASIC
+            const basic = document.createElement("div");
+            basic.className = "subsection";
+            basic.innerHTML = `<h4>Basic Info</h4>`;
+            const basicGrid = document.createElement("div");
+            basicGrid.className = "field-grid";
+
+            // Image preview
+            const prevBox = document.createElement("div");
+            prevBox.className = "field";
+            const prevLabel = document.createElement("label");
+            prevLabel.textContent = "Image";
+            const prev = document.createElement("div");
+            prev.className = "img-preview";
+            prevBox.appendChild(prevLabel);
+            prevBox.appendChild(prev);
+            basicGrid.appendChild(prevBox);
+
+            // Load image immediately (no lazy in overlay)
+            (function updatePrev() {
+                const id = (p.id || "").trim();
+                const url = id ? PKMN_IMG(id) : "";
+                if (!url) { prev.style.backgroundImage = "none"; return; }
+                loadBgOnce(url, () => applyBg(prev, url), () => { prev.style.backgroundImage = "none"; });
+            })();
+
+            // Simple read rows
+            function readRow(label, value) {
+                const f = document.createElement("div"); f.className = "field";
+                const l = document.createElement("label"); l.textContent = label;
+                const v = document.createElement("div"); v.textContent = value || "—";
+                f.appendChild(l); f.appendChild(v);
+                return f;
+            }
+
+            basicGrid.appendChild(readRow("ID", p.id));
+            basicGrid.appendChild(readRow("Name", p.name));
+            basicGrid.appendChild(readRow("Form", p.form));
+            basic.appendChild(basicGrid);
+
+            // SECONDARY
+            const secondary = document.createElement("div");
+            secondary.className = "subsection";
+            secondary.innerHTML = `<h4>Secondary Info</h4>`;
+            const secondaryGrid = document.createElement("div");
+            secondaryGrid.className = "field-grid";
+            secondaryGrid.appendChild(readRow("Type 1", p.type1));
+            secondaryGrid.appendChild(readRow("Type 2", p.type2));
+            secondaryGrid.appendChild(readRow("Evolution", p.evolution));
+            secondaryGrid.appendChild(readRow("Species", p.species));
+            secondary.appendChild(secondaryGrid);
+
+            // STATS
+            const stats = document.createElement("div");
+            stats.className = "subsection";
+            stats.innerHTML = `<h4>Stats</h4>`;
+            const statsGrid = document.createElement("div");
+            statsGrid.className = "field-grid";
+            statsGrid.appendChild(readRow("HP", p.hp ?? ""));
+            statsGrid.appendChild(readRow("Attack", p.attack ?? ""));
+            statsGrid.appendChild(readRow("Defence", p.defense ?? ""));
+            statsGrid.appendChild(readRow("Sp. Attack", p.spAtk ?? ""));
+            statsGrid.appendChild(readRow("Sp. Defence", p.spDef ?? ""));
+            statsGrid.appendChild(readRow("Speed", p.speed ?? ""));
+            stats.appendChild(statsGrid);
+
+            // POKÉDEX ENTRIES
+            const pdx = document.createElement("div");
+            pdx.className = "subsection";
+            pdx.innerHTML = `<h4>Pokédex Entries</h4>`;
+            const grid = document.createElement("div");
+            grid.className = "pokedex-grid";
+
+            // sort games by release and render any entries present
+            const sortedGames = DATA.games.slice().sort(byReleaseDateAsc);
+            let any = false;
+            for (const g of sortedGames) {
+                const pd = p.pokedex?.[g.id];
+                if (!pd || (!pd.entry && !pd.regionalDexNumber)) continue;
+                any = true;
+
+                const card = document.createElement("div");
+                card.className = "pokedex-card";
+                const gameColor = g.colorHex && /^#[0-9a-f]{6}$/i.test(g.colorHex) ? g.colorHex.toUpperCase() : "#888888";
+                card.setAttribute("style", `--dex_color:${gameColor}`);
+
+                const parts = [];
+                if (g.releaseDate) parts.push(safeHtml(g.releaseDate));
+                if (g.console) parts.push(safeHtml(g.console));
+                const header = document.createElement("div");
+                header.innerHTML = `<strong>${safeHtml(g.title || "(untitled)")}</strong> <span class="muted">${parts.length ? "• " + parts.join(" • ") : ""}</span>`;
+                card.appendChild(header);
+
+                const fwrap = document.createElement("div");
+                fwrap.className = "field-grid";
+                fwrap.appendChild(readRow("Regional Dex #", pd.regionalDexNumber || ""));
+                const entryField = document.createElement("div");
+                entryField.className = "field";
+                const lab = document.createElement("label"); lab.textContent = "Entry";
+                const val = document.createElement("div"); val.textContent = pd.entry || "—";
+                entryField.appendChild(lab); entryField.appendChild(val);
+                fwrap.appendChild(entryField);
+
+                card.appendChild(fwrap);
+                grid.appendChild(card);
+            }
+            if (!any) {
+                const empty = document.createElement("div");
+                empty.className = "muted";
+                empty.textContent = "No Pokédex entries for this Pokémon yet.";
+                grid.appendChild(empty);
+            }
+            pdx.appendChild(grid);
+
+            // mount
+            pkmnOverlayBody.innerHTML = "";
+            pkmnOverlayBody.appendChild(basic);
+            pkmnOverlayBody.appendChild(secondary);
+            pkmnOverlayBody.appendChild(stats);
+            pkmnOverlayBody.appendChild(pdx);
+
+            pkmnOverlay.classList.add("open");
+            pkmnOverlay.setAttribute("aria-hidden", "false");
+        }
+
+        function closePokemonOverlay() {
+            pkmnOverlay.classList.remove("open");
+            pkmnOverlay.setAttribute("aria-hidden", "true");
+            pkmnOverlayBody.innerHTML = "";
+        }
+
+        pkmnOverlay.addEventListener("click", (e) => {
+            if (e.target === pkmnOverlay) closePokemonOverlay(); // click outside to close
+        });
+        pkmnOverlayCloseBtn.addEventListener("click", closePokemonOverlay);
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape" && pkmnOverlay.classList.contains("open")) closePokemonOverlay();
+        });
+
+
 
         /* =======================
            Main Views
@@ -298,10 +496,21 @@
             wrap.className = "grid";
             for (const p of list) {
                 const card = document.createElement("div"); card.className = "card";
+                setTypeData(card, p);
                 const img = document.createElement("div"); img.className = "img";
                 lazyBg(img, PKMN_IMG(p.id));
                 const title = document.createElement("div");
-                title.innerHTML = `<strong>${safeHtml(p.name || "(Unnamed)")}</strong> <span class="muted">${safeHtml(p.form || "")}</span>`;
+                const nameBtn = document.createElement("button");
+                nameBtn.className = "btn linkish";
+                nameBtn.style.cursor = "pointer";
+                nameBtn.innerHTML = `<strong>${safeHtml(p.name || "(Unnamed)")}</strong>`;
+                nameBtn.addEventListener("click", () => openPokemonOverlay(p));
+                const formSpan = document.createElement("span");
+                formSpan.className = "muted";
+                formSpan.textContent = p.form || "";
+                title.appendChild(nameBtn);
+                title.appendChild(document.createTextNode(" "));
+                title.appendChild(formSpan);
                 const meta = document.createElement("div");
                 meta.className = "row muted";
                 meta.innerHTML = `<span class="pill">#${safeHtml(p.id)}</span><span class="pill">${safeHtml(p.type1 || "—")}${p.type2 ? " / " + safeHtml(p.type2) : ""}</span>`;
@@ -314,23 +523,52 @@
 
         function renderGames() {
             const list = DATA.games.slice().sort(byReleaseDateAsc);
-            const wrap = document.createElement("div"); wrap.className = "grid";
+            const wrap = document.createElement("div");
+            wrap.className = "grid";
+
             for (const g of list) {
-                const card = document.createElement("div"); card.className = "card";
-                const img = document.createElement("div"); img.className = "game-img";
+                const card = document.createElement("div");
+                card.className = "card";
+
+                // 🔹 NEW: Add game colour variable
+                const gameColor = g.colorHex && /^#[0-9a-f]{6}$/i.test(g.colorHex)
+                    ? g.colorHex.toUpperCase()
+                    : "#888888";
+                card.setAttribute("style", `--dex_color:${gameColor}`);
+
+                // click behaviour
+                card.style.cursor = "pointer";
+                card.addEventListener("click", () => renderGameCatalog(g));
+
+                // image
+                const img = document.createElement("div");
+                img.className = "game-img";
                 if (g.imageSlug) lazyBg(img, GAME_IMG(g.imageSlug));
                 else img.style.backgroundImage = "none";
+
+                // title
                 const title = document.createElement("div");
                 title.innerHTML = `<strong>${safeHtml(g.title || "(Untitled)")}</strong>`;
+
+                // meta info
                 const meta = document.createElement("div");
                 meta.className = "row muted";
-                const date = g.releaseDate ? new Date(g.releaseDate).toISOString().slice(0, 10) : "—";
+                const date = g.releaseDate
+                    ? new Date(g.releaseDate).toISOString().slice(0, 10)
+                    : "—";
                 meta.innerHTML = `<span class="pill">${safeHtml(g.console || "—")}</span><span class="pill">${safeHtml(date)}</span>`;
-                card.appendChild(img); card.appendChild(title); card.appendChild(meta);
+
+                // assemble
+                card.appendChild(img);
+                card.appendChild(title);
+                card.appendChild(meta);
                 wrap.appendChild(card);
             }
-            mainEl.innerHTML = ""; mainEl.appendChild(wrap);
+
+            mainEl.innerHTML = "";
+            mainEl.appendChild(wrap);
         }
+
 
         function renderSearch() {
             mainEl.innerHTML = "";
@@ -417,13 +655,39 @@
                 for (const h of hits) {
                     const { p, fieldMatches, dexMatches } = h;
                     const card = document.createElement("div"); card.className = "result";
-
+                    setTypeData(card, p);
                     const header = document.createElement("div"); header.className = "result-header";
                     const img = document.createElement("div"); img.className = "result-img";
                     lazyBg(img, PKMN_IMG(p.id));
                     const title = document.createElement("div");
-                    const form = p.form ? ` <span class="muted">• ${safeHtml(p.form)}</span>` : "";
-                    title.innerHTML = `<strong>${safeHtml(p.name || "(Unnamed)")}</strong>${form}<div class="muted">#${safeHtml(p.id)} • ${safeHtml([p.type1, p.type2].filter(Boolean).join(" / ") || "—")}</div>`;
+                    // First line: clickable name + optional form
+                    const row1 = document.createElement("div");
+                    const nameBtn = document.createElement("button");
+                    nameBtn.className = "btn linkish";
+                    nameBtn.style.padding = "0";
+                    nameBtn.style.background = "transparent";
+                    nameBtn.style.border = "0";
+                    nameBtn.style.color = "inherit";
+                    nameBtn.style.cursor = "pointer";
+                    nameBtn.innerHTML = `<strong>${highlightHTML(p.name || "(Unnamed)", qRaw)}</strong>`;
+                    nameBtn.addEventListener("click", () => openPokemonOverlay(p));
+                    row1.appendChild(nameBtn);
+                    if (p.form) {
+                        const sep = document.createElement("span"); sep.textContent = " ";
+                        const form = document.createElement("span"); form.className = "muted";
+                        form.innerHTML = highlightHTML(`• ${p.form}`, qRaw);
+                        row1.appendChild(sep); row1.appendChild(form);
+                    }
+
+                    title.appendChild(row1);
+
+                    // Second line: id/types
+                    const row2 = document.createElement("div");
+                    row2.className = "muted";
+                    const idTypes = `#${p.id} • ${[p.type1, p.type2].filter(Boolean).join(" / ") || "—"}`;
+                    row2.innerHTML = highlightHTML(idTypes, qRaw);
+                    title.appendChild(row2);
+
                     const score = document.createElement("div");
                     score.innerHTML = `<span class="pill">Relevancy: ${h.relevancy}</span>`;
                     header.appendChild(img); header.appendChild(title); header.appendChild(score);
@@ -436,7 +700,7 @@
                         for (const m of fieldMatches) {
                             const label = m.label.replace(/^./, c => c.toUpperCase());
                             const div = document.createElement("div");
-                            div.innerHTML = `<span class="muted">${safeHtml(label)}:</span> ${safeHtml(m.value)}`;
+                            div.innerHTML = `<span class="muted">${safeHtml(label)}:</span> ${highlightHTML(m.value, qRaw)}`;
                             list.appendChild(div);
                         }
                         fieldsBox.appendChild(list);
@@ -452,7 +716,9 @@
                             const gTitle = g ? g.title : dm.gameId;
                             const date = (g && g.releaseDate) ? new Date(g.releaseDate).toISOString().slice(0, 10) : "—";
                             const item = document.createElement("div"); item.className = "dex-entry";
-                            item.innerHTML = `<div class="muted">${safeHtml(gTitle)} • ${safeHtml(date)}</div><div>${safeHtml(dm.entry)}</div>`;
+                            const gameColor = g && /^#[0-9a-f]{6}$/i.test(g.colorHex) ? g.colorHex.toUpperCase() : "#888888";
+                            item.setAttribute("style", `--dex_color:${gameColor}`);
+                            item.innerHTML = `<div class="muted">${safeHtml(gTitle)} • ${safeHtml(date)}</div><div>${highlightHTML(dm.entry, qRaw)}</div>`;
                             list.appendChild(item);
                         }
                         dexBox.appendChild(list);
@@ -763,13 +1029,34 @@
                 const secondaryGrid = document.createElement("div");
                 secondaryGrid.className = "field-grid";
 
-                // Type 1 / Type 2
-                secondaryGrid.appendChild(
-                    makeField("Type 1", "select", p.type1 ?? "", (val) => { p.type1 = val; }, { options: TYPE_OPTIONS }).container
+                // Type 1 / Type 2 (with data-type1 / data-type2 on the <select>)
+                const type1Field = makeField(
+                    "Type 1", "select", p.type1 ?? "",
+                    (val) => { p.type1 = val; },
+                    { options: TYPE_OPTIONS }
                 );
-                secondaryGrid.appendChild(
-                    makeField("Type 2", "select", p.type2 ?? "", (val) => { p.type2 = val; }, { options: TYPE_OPTIONS }).container
+                const type2Field = makeField(
+                    "Type 2", "select", p.type2 ?? "",
+                    (val) => { p.type2 = val; },
+                    { options: TYPE_OPTIONS }
                 );
+
+                // Initial set on first render
+                setTypeDataAttr(type1Field.input, "data-type1", p.type1);
+                setTypeDataAttr(type2Field.input, "data-type2", p.type2);
+
+                // Keep in sync when the user changes the select
+                type1Field.input.addEventListener("change", () => {
+                    setTypeDataAttr(type1Field.input, "data-type1", type1Field.input.value);
+                });
+                type2Field.input.addEventListener("change", () => {
+                    setTypeDataAttr(type2Field.input, "data-type2", type2Field.input.value);
+                });
+
+                // Append to the grid
+                secondaryGrid.appendChild(type1Field.container);
+                secondaryGrid.appendChild(type2Field.container);
+
 
                 // Evolution
                 secondaryGrid.appendChild(
@@ -933,9 +1220,6 @@
                 slugRow.className = "row";
                 const gPrev = document.createElement("div");
                 gPrev.className = "img-preview";
-                gPrev.style.width = "140px";
-                gPrev.style.height = "78px";
-                gPrev.style.marginRight = "12px";
                 const fieldWrap = document.createElement("div");
                 fieldWrap.style.flex = "1";
                 fieldWrap.appendChild(slugField.container);
@@ -954,6 +1238,102 @@
                 updateGamePrev();
             }
         }
+
+        function renderGameCatalog(game) {
+            // Header with game details
+            const header = document.createElement("div");
+            header.className = "subsection";
+            const gColor = game.colorHex && /^#[0-9a-f]{6}$/i.test(game.colorHex) ? game.colorHex.toUpperCase() : "#888888";
+            header.setAttribute("style", `--dex_color:${gColor}`);
+            header.style.display = "grid";
+            header.style.gap = "12px";
+
+            const headTop = document.createElement("div");
+            headTop.style.display = "flex";
+            headTop.style.justifyContent = "space-between";
+            headTop.style.alignItems = "center";
+
+            const hTitle = document.createElement("div");
+            hTitle.innerHTML = `<strong style="font-size:18px">${safeHtml(game.title || "(Untitled)")}</strong>`;
+            const back = document.createElement("button");
+            back.className = "btn";
+            back.textContent = "← Back to Games";
+            back.addEventListener("click", () => { mainView = "games"; renderMain(); });
+            headTop.appendChild(hTitle); headTop.appendChild(back);
+
+            const meta = document.createElement("div");
+            meta.className = "row muted";
+            const date = game.releaseDate ? new Date(game.releaseDate).toISOString().slice(0, 10) : "—";
+            meta.innerHTML = `<span class="pill">${safeHtml(game.console || "—")}</span><span class="pill">${safeHtml(date)}</span>`;
+
+            const hero = document.createElement("div");
+            hero.className = "game-img";
+            if (game.imageSlug) lazyBg(hero, GAME_IMG(game.imageSlug));
+
+            header.appendChild(headTop);
+            header.appendChild(meta);
+            header.appendChild(hero);
+
+            // Filter Pokémon that have an entry OR a regional dex number for this game
+            const filtered = DATA.pokemon.filter(p => {
+                const pd = p.pokedex?.[game.id];
+                if (!pd) return false;
+                const hasEntry = !!(pd.entry && String(pd.entry).trim());
+                const hasRegional = !!(pd.regionalDexNumber && String(pd.regionalDexNumber).trim());
+                return hasEntry || hasRegional;
+            });
+
+            // Sort: regional dex number (numeric, missing last), then name
+            filtered.sort((a, b) => {
+                const ad = parseInt(a.pokedex?.[game.id]?.regionalDexNumber || "", 10);
+                const bd = parseInt(b.pokedex?.[game.id]?.regionalDexNumber || "", 10);
+                const aHas = !isNaN(ad), bHas = !isNaN(bd);
+                if (aHas && bHas && ad !== bd) return ad - bd;
+                if (aHas !== bHas) return aHas ? -1 : 1;
+                return (a.name || "").localeCompare(b.name || "", undefined, { sensitivity: "base" });
+            });
+
+            // Grid like Browse
+            const grid = document.createElement("div");
+            grid.className = "grid";
+            for (const p of filtered) {
+                const card = document.createElement("div"); card.className = "card";
+                setTypeData(card, p);
+                const img = document.createElement("div"); img.className = "img";
+                lazyBg(img, PKMN_IMG(p.id));
+
+                const title = document.createElement("div");
+                const nameBtn = document.createElement("button");
+                nameBtn.className = "btn linkish";
+                nameBtn.style.padding = "0";
+                nameBtn.style.background = "transparent";
+                nameBtn.style.border = "0";
+                nameBtn.style.color = "inherit";
+                nameBtn.style.cursor = "pointer";
+                nameBtn.innerHTML = `<strong>${safeHtml(p.name || "(Unnamed)")}</strong>`;
+                nameBtn.addEventListener("click", () => openPokemonOverlay(p));
+                const formSpan = document.createElement("span");
+                formSpan.className = "muted";
+                formSpan.textContent = p.form || "";
+                title.appendChild(nameBtn);
+                title.appendChild(document.createTextNode(" "));
+                title.appendChild(formSpan);
+
+                const meta = document.createElement("div");
+                meta.className = "row muted";
+                const pd = p.pokedex?.[game.id] || {};
+                const dexNo = (pd.regionalDexNumber && String(pd.regionalDexNumber).trim()) ? `#${pd.regionalDexNumber}` : "—";
+                meta.innerHTML = `<span class="pill">${safeHtml(dexNo)}</span><span class="pill">${safeHtml([p.type1, p.type2].filter(Boolean).join(" / ") || "—")}</span>`;
+
+                card.appendChild(img); card.appendChild(title); card.appendChild(meta);
+                grid.appendChild(card);
+            }
+
+            mainEl.innerHTML = "";
+            mainEl.appendChild(header);
+            mainEl.appendChild(grid);
+        }
+
 
         // Kick off
         loadInitialData();
