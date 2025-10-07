@@ -99,6 +99,10 @@
 
         let mainView = "browse";  // "browse" | "games" | "search"
 
+        const PKMN_IMG = (id) => `images/pkmn/${encodeURIComponent(id)}.webp`;
+        const GAME_IMG = (slug) => `images/games/${encodeURIComponent(slug)}.webp`;
+
+
         function safeHtml(str) { return String(str ?? "").replace(/[&<>"']/g, s => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[s])) }
         function numberOrNull(v) { const n = Number(v); return isNaN(n) ? null : n }
         function numOrNullFromInput(v) { if (v === "" || v === null || v === undefined) return null; const n = Number(v); return isNaN(n) ? null : n }
@@ -111,7 +115,7 @@
         }
 
         function debounce(fn, wait = 250) {
-        let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), wait); };
+            let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), wait); };
         }
         const refreshLeftList = debounce(() => renderAdminLeftList(), 250);
 
@@ -125,41 +129,41 @@
         const IMG_STATUS = new Map(); // url -> "ok" | "err"
 
         function applyBg(el, url) {
-        if (!url) { el.style.backgroundImage = "none"; return; }
-        el.style.backgroundImage = `url("${url}")`;
+            if (!url) { el.style.backgroundImage = "none"; return; }
+            el.style.backgroundImage = `url("${url}")`;
         }
 
         function loadBgOnce(url, onOk, onErr) {
-        const status = IMG_STATUS.get(url);
-        if (status === "ok") { onOk(); return; }
-        if (status === "err") { onErr(); return; }
-        const img = new Image();
-        img.onload = () => { IMG_STATUS.set(url, "ok"); onOk(); };
-        img.onerror = () => { IMG_STATUS.set(url, "err"); onErr(); };
-        img.src = url; // no cache-busting here – allow browser cache
+            const status = IMG_STATUS.get(url);
+            if (status === "ok") { onOk(); return; }
+            if (status === "err") { onErr(); return; }
+            const img = new Image();
+            img.onload = () => { IMG_STATUS.set(url, "ok"); onOk(); };
+            img.onerror = () => { IMG_STATUS.set(url, "err"); onErr(); };
+            img.src = url; // no cache-busting here – allow browser cache
         }
 
         // IntersectionObserver: load when near viewport
         const lazyIO = new IntersectionObserver((entries) => {
-        for (const e of entries) {
-            if (!e.isIntersecting) continue;
-            const el = e.target;
-            lazyIO.unobserve(el);
-            const url = el.dataset.bg || "";
-            if (!url) return;
-            loadBgOnce(
-            url,
-            () => applyBg(el, url),
-            () => { el.style.backgroundImage = "none"; }
-            );
-        }
+            for (const e of entries) {
+                if (!e.isIntersecting) continue;
+                const el = e.target;
+                lazyIO.unobserve(el);
+                const url = el.dataset.bg || "";
+                if (!url) return;
+                loadBgOnce(
+                    url,
+                    () => applyBg(el, url),
+                    () => { el.style.backgroundImage = "none"; }
+                );
+            }
         }, { root: null, rootMargin: "300px", threshold: 0.01 });
 
         function lazyBg(el, url) {
-        if (!url) { el.style.backgroundImage = "none"; return; }
-        el.dataset.bg = url;
-        // Optional: low-cost placeholder stays until loaded
-        lazyIO.observe(el);
+            if (!url) { el.style.backgroundImage = "none"; return; }
+            el.dataset.bg = url;
+            // Optional: low-cost placeholder stays until loaded
+            lazyIO.observe(el);
         }
 
 
@@ -238,21 +242,21 @@
             return out;
         }
 
-async function loadInitialData() {
-    try {
-      const res = await fetch("./data.json"); // allow normal HTTP caching on GitHub Pages
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      let raw = await res.text();
-      let json;
-      try { json = JSON.parse(raw); } catch { raw = fixJsonText(raw); json = JSON.parse(raw); }
-      DATA = Array.isArray(json) ? normalizeData({ pokemon: json, games: [] }) : normalizeData(json);
-    } catch (e) {
-      console.warn("Could not auto-load data.json. Use Import JSON if opening via file://", e);
-    }
-    updateDatasetSummary();
-    renderMain();
-  }
-  
+        async function loadInitialData() {
+            try {
+                const res = await fetch("./data.json"); // allow normal HTTP caching on GitHub Pages
+                if (!res.ok) throw new Error("HTTP " + res.status);
+                let raw = await res.text();
+                let json;
+                try { json = JSON.parse(raw); } catch { raw = fixJsonText(raw); json = JSON.parse(raw); }
+                DATA = Array.isArray(json) ? normalizeData({ pokemon: json, games: [] }) : normalizeData(json);
+            } catch (e) {
+                console.warn("Could not auto-load data.json. Use Import JSON if opening via file://", e);
+            }
+            updateDatasetSummary();
+            renderMain();
+        }
+
 
         /* =======================
            Main Views
@@ -295,7 +299,7 @@ async function loadInitialData() {
             for (const p of list) {
                 const card = document.createElement("div"); card.className = "card";
                 const img = document.createElement("div"); img.className = "img";
-                lazyBg(`images/pkmn/${encodeURIComponent(p.id)}.webp`);
+                lazyBg(img, PKMN_IMG(p.id));
                 const title = document.createElement("div");
                 title.innerHTML = `<strong>${safeHtml(p.name || "(Unnamed)")}</strong> <span class="muted">${safeHtml(p.form || "")}</span>`;
                 const meta = document.createElement("div");
@@ -314,11 +318,8 @@ async function loadInitialData() {
             for (const g of list) {
                 const card = document.createElement("div"); card.className = "card";
                 const img = document.createElement("div"); img.className = "game-img";
-                if (g.imageSlug) {
-                    lazyBg(`images/games/${encodeURIComponent(g.imageSlug)}.webp`);
-                } else {
-                    img.style.backgroundImage = "none";
-                }
+                if (g.imageSlug) lazyBg(img, GAME_IMG(g.imageSlug));
+                else img.style.backgroundImage = "none";
                 const title = document.createElement("div");
                 title.innerHTML = `<strong>${safeHtml(g.title || "(Untitled)")}</strong>`;
                 const meta = document.createElement("div");
@@ -419,7 +420,7 @@ async function loadInitialData() {
 
                     const header = document.createElement("div"); header.className = "result-header";
                     const img = document.createElement("div"); img.className = "result-img";
-                    lazyBg(`images/pkmn/${encodeURIComponent(p.id)}.webp`);
+                    lazyBg(img, PKMN_IMG(p.id));
                     const title = document.createElement("div");
                     const form = p.form ? ` <span class="muted">• ${safeHtml(p.form)}</span>` : "";
                     title.innerHTML = `<strong>${safeHtml(p.name || "(Unnamed)")}</strong>${form}<div class="muted">#${safeHtml(p.id)} • ${safeHtml([p.type1, p.type2].filter(Boolean).join(" / ") || "—")}</div>`;
@@ -571,7 +572,7 @@ async function loadInitialData() {
                 ? (pokemonSortMode === "AZ" ? "A–Z" : "0–9")
                 : (gameSortMode === "AZ" ? "A–Z" : "Date");
 
-                refreshLeftList();
+            refreshLeftList();
             renderAdminRight();
         }
 
@@ -618,11 +619,11 @@ async function loadInitialData() {
                 thumb.classList.add("list_thumb");
 
                 if (adminActiveView === "pokemon") {
-                const id = (item.id || "").trim();
-                if (id) lazyBg(thumb, `images/pkmn/${encodeURIComponent(id)}.webp`);
+                    const id = (item.id || "").trim();
+                    if (id) lazyBg(thumb, PKMN_IMG(id));
                 } else {
-                const slug = (item.imageSlug || "").trim();
-                if (slug) lazyBg(thumb, `images/games/${encodeURIComponent(slug)}.webp`);
+                    const slug = (item.imageSlug || "").trim();
+                    if (slug) lazyBg(thumb, GAME_IMG(slug));
                 }
 
 
@@ -720,12 +721,12 @@ async function loadInitialData() {
                 prevBox.appendChild(prev);
                 basicGrid.appendChild(prevBox);
 
-                function updateGamePrev() {
-  const slug = (g.imageSlug || "").trim();
-  const url = slug ? `images/games/${encodeURIComponent(slug)}.webp` : "";
-  if (!url) { gPrev.style.backgroundImage = "none"; return; }
-  loadBgOnce(url, () => applyBg(gPrev, url), () => { gPrev.style.backgroundImage = "none"; });
-}
+                function updatePrev() {
+                    const id = (p.id || "").trim();
+                    const url = id ? PKMN_IMG(id) : "";
+                    if (!url) { prev.style.backgroundImage = "none"; return; }
+                    loadBgOnce(url, () => applyBg(prev, url), () => { prev.style.backgroundImage = "none"; });
+                }
 
                 // ID
                 basicGrid.appendChild(
@@ -944,8 +945,9 @@ async function loadInitialData() {
 
                 function updateGamePrev() {
                     const slug = (g.imageSlug || "").trim();
-                    const url = slug ? `images/games/${encodeURIComponent(slug)}.webp` : "";
-                    lazyBg(url, gPrev);
+                    const url = slug ? GAME_IMG(slug) : "";
+                    if (!url) { gPrev.style.backgroundImage = "none"; return; }
+                    loadBgOnce(url, () => applyBg(gPrev, url), () => { gPrev.style.backgroundImage = "none"; });
                 }
 
                 body.appendChild(wrap);
