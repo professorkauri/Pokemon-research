@@ -94,6 +94,21 @@
         </div>
     </div>
 
+    <!-- Public Corpus Overlay -->
+    <div class="overlay" id="corpusOverlay" aria-hidden="true">
+        <div class="admin-window" role="dialog" aria-modal="true" aria-label="Game corpus" style="max-width:960px;">
+            <div class="admin-header">
+                <div class="admin-title" id="corpusOverlayTitle">Corpus</div>
+                <div class="toolbar">
+                    <button id="corpusOverlayClose" class="btn">Close</button>
+                </div>
+            </div>
+            <div class="right-body" id="corpusOverlayBody">
+                <!-- filled dynamically -->
+            </div>
+        </div>
+    </div>
+
     <script>
         const s = document.createElement('link');
         s.rel = 'stylesheet';
@@ -121,6 +136,23 @@
             if (v) el.setAttribute(attr, v);
             else el.removeAttribute(attr);
         }
+
+        // Make a Pokémon image clickable: wrap div.img in a button and return it
+        function makeClickablePokemonImage(imgEl, p) {
+            const btn = document.createElement("button");
+            btn.className = "link-btn";
+            btn.style.padding = "0";
+            btn.style.background = "transparent";
+            btn.style.border = "0";
+            btn.style.color = "inherit";
+            btn.style.cursor = "pointer";
+            btn.setAttribute("aria-label", `Open ${p?.name || "Pokémon"} entry`);
+            btn.addEventListener("click", () => openPokemonOverlay(p));
+
+            btn.appendChild(imgEl);   // wrap the image div
+            return btn;               // <-- IMPORTANT: return wrapper
+        }
+
 
         let adminActiveView = "pokemon";
         let selectedId = null;
@@ -236,7 +268,8 @@
                     releaseDate: t(g.releaseDate),
                     console: t(g.console),
                     colorHex: t(g.colorHex || "#888888"),
-                    imageSlug: t(g.imageSlug)
+                    imageSlug: t(g.imageSlug),
+                    corpusSlug: t(g.corpusSlug)
                 }));
             }
 
@@ -454,6 +487,90 @@
             if (e.key === "Escape" && pkmnOverlay.classList.contains("open")) closePokemonOverlay();
         });
 
+        /* =======================
+   Game Corpus Overlay + Loader
+   ======================= */
+        const CORPUS_CACHE = new Map(); // slug -> { lines: string[], text: string }
+
+        async function loadCorpus(slug) {
+            slug = String(slug || "").trim();
+            if (!slug) return { lines: [], text: "" };
+            if (CORPUS_CACHE.has(slug)) return CORPUS_CACHE.get(slug);
+
+            const url = `corpus/${encodeURIComponent(slug)}.txt`;
+            try {
+                const res = await fetch(url);
+                if (!res.ok) throw new Error("HTTP " + res.status);
+                // raw text (may contain literal "\n" "\r" "\c" tokens)
+                const text = await res.text();
+
+                // 1) remove actual CR characters
+                // 2) split on actual newlines
+                // 3) for each line, replace literal \n \r \c tokens with a space
+                // 4) collapse whitespace
+                const lines = text
+                    .replace(/\r/g, "")
+                    .split("\n")
+                    .map(l =>
+                        l
+                            .replace(/\\[nrc]/g, " ")  // literal "\n" "\r" "\c" -> space
+                            .replace(/\s+/g, " ")      // collapse
+                            .trim()
+                    );
+
+                const value = { lines, text };
+                CORPUS_CACHE.set(slug, value);
+                return value;
+            } catch (e) {
+                const value = { lines: [], text: "" };
+                CORPUS_CACHE.set(slug, value);
+                return value;
+            }
+        }
+
+        const corpusOverlay = document.getElementById("corpusOverlay");
+        const corpusOverlayBody = document.getElementById("corpusOverlayBody");
+        const corpusOverlayTitle = document.getElementById("corpusOverlayTitle");
+        const corpusOverlayCloseBtn = document.getElementById("corpusOverlayClose");
+
+        function closeCorpusOverlay() {
+            corpusOverlay.classList.remove("open");
+            corpusOverlay.setAttribute("aria-hidden", "true");
+            corpusOverlayBody.innerHTML = "";
+        }
+
+        async function openCorpusOverlayForGame(game) {
+            corpusOverlayTitle.textContent = `${game.title || "Game"} — Corpus`;
+            corpusOverlayBody.innerHTML = `<div class="muted">Loading corpus…</div>`;
+
+            const { lines } = await loadCorpus(game.corpusSlug);
+            const list = document.createElement("div");
+            list.style.display = "grid";
+            list.style.gap = "6px";
+
+            // render every line with numbers
+            lines.forEach((line, i) => {
+                const p = document.createElement("p");
+                p.className = "corpus_line";
+                p.textContent = `${i + 1} : ${line}`;
+                list.appendChild(p);
+            });
+
+            corpusOverlayBody.innerHTML = "";
+            corpusOverlayBody.appendChild(list);
+            corpusOverlay.classList.add("open");
+            corpusOverlay.setAttribute("aria-hidden", "false");
+        }
+
+        corpusOverlay?.addEventListener("click", (e) => {
+            if (e.target === corpusOverlay) closeCorpusOverlay();
+        });
+        corpusOverlayCloseBtn?.addEventListener("click", closeCorpusOverlay);
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape" && corpusOverlay.classList.contains("open")) closeCorpusOverlay();
+        });
+
+
 
 
         /* =======================
@@ -494,32 +611,60 @@
             const list = DATA.pokemon.slice().sort(idComparator);
             const wrap = document.createElement("div");
             wrap.className = "grid";
+
             for (const p of list) {
-                const card = document.createElement("div"); card.className = "card";
+                const card = document.createElement("div");
+                card.className = "card";
                 setTypeData(card, p);
-                const img = document.createElement("div"); img.className = "img";
+
+                // Image (click to open overlay)
+                const img = document.createElement("div");
+                img.className = "img";
                 lazyBg(img, PKMN_IMG(p.id));
+                const imgBtn = img; // keep the familiar name
+                imgBtn.style.cursor = "pointer";
+                imgBtn.addEventListener("click", () => openPokemonOverlay(p));
+                card.appendChild(imgBtn);
+
+                // Title (name clickable) + form
                 const title = document.createElement("div");
                 const nameBtn = document.createElement("button");
-                nameBtn.className = "btn linkish";
+                nameBtn.className = "link-btn";
                 nameBtn.style.cursor = "pointer";
                 nameBtn.innerHTML = `<strong>${safeHtml(p.name || "(Unnamed)")}</strong>`;
                 nameBtn.addEventListener("click", () => openPokemonOverlay(p));
+
                 const formSpan = document.createElement("span");
                 formSpan.className = "muted";
                 formSpan.textContent = p.form || "";
+
                 title.appendChild(nameBtn);
                 title.appendChild(document.createTextNode(" "));
                 title.appendChild(formSpan);
+
+                // Meta
                 const meta = document.createElement("div");
                 meta.className = "row muted";
-                meta.innerHTML = `<span class="pill">#${safeHtml(p.id)}</span><span class="pill">${safeHtml(p.type1 || "—")}${p.type2 ? " / " + safeHtml(p.type2) : ""}</span>`;
-                card.appendChild(img); card.appendChild(title); card.appendChild(meta);
+                let typeHTML = "";
+                if (p.type1 && p.type2) {
+                    typeHTML = `<p class="pill pill-types"><span data-type1="${safeHtml(p.type1.toLowerCase())}">${safeHtml(p.type1)}</span> <span data-type2="${safeHtml(p.type2.toLowerCase())}">${safeHtml(p.type2)}</span></p>`;
+                } else if (p.type1) {
+                    typeHTML = `<p class="pill pill-types"><span data-type1="${safeHtml(p.type1.toLowerCase())}">${safeHtml(p.type1)}</span></p>`;
+                } else {
+                    typeHTML = `<p class="pill">—</p>`;
+                }
+
+                meta.innerHTML = `<span class="pill">#${safeHtml(p.id)}</span>${typeHTML}`;
+
+                card.appendChild(title);
+                card.appendChild(meta);
                 wrap.appendChild(card);
             }
+
             mainEl.innerHTML = "";
             mainEl.appendChild(wrap);
         }
+
 
         function renderGames() {
             const list = DATA.games.slice().sort(byReleaseDateAsc);
@@ -583,7 +728,7 @@
             summary.textContent = "Enter a word or phrase to begin.";
             const results = document.createElement("div"); results.className = "results";
 
-            function doSearch() {
+            async function doSearch() {
                 const qRaw = input.value || ""; const q = qRaw.trim().toLowerCase();
                 results.innerHTML = "";
                 if (!q) { summary.textContent = "Enter a word or phrase to begin."; return; }
@@ -654,34 +799,59 @@
 
                 for (const h of hits) {
                     const { p, fieldMatches, dexMatches } = h;
-                    const card = document.createElement("div"); card.className = "result";
+
+                    const card = document.createElement("div");
+                    card.className = "result";
                     setTypeData(card, p);
-                    const header = document.createElement("div"); header.className = "result-header";
-                    const img = document.createElement("div"); img.className = "result-img";
+
+                    const header = document.createElement("div");
+                    header.className = "result-header";
+
+                    // --- Clickable image (uses same 'link-btn' styling) ---
+                    const imgBtn = document.createElement("button");
+                    imgBtn.className = "link-btn";
+                    imgBtn.style.padding = "0";
+                    imgBtn.style.background = "transparent";
+                    imgBtn.style.border = "0";
+                    imgBtn.style.color = "inherit";
+                    imgBtn.style.cursor = "pointer";
+                    imgBtn.setAttribute("aria-label", `Open ${p.name || "Pokémon"} entry`);
+
+                    const img = document.createElement("div");
+                    img.className = "result-img";
                     lazyBg(img, PKMN_IMG(p.id));
+                    imgBtn.appendChild(img);
+
+                    imgBtn.addEventListener("click", () => openPokemonOverlay(p));
+
                     const title = document.createElement("div");
-                    // First line: clickable name + optional form
+
+                    // --- First line: clickable name + optional form (same 'link-btn' styling) ---
                     const row1 = document.createElement("div");
                     const nameBtn = document.createElement("button");
-                    nameBtn.className = "btn linkish";
+                    nameBtn.className = "link-btn";
                     nameBtn.style.padding = "0";
                     nameBtn.style.background = "transparent";
                     nameBtn.style.border = "0";
                     nameBtn.style.color = "inherit";
                     nameBtn.style.cursor = "pointer";
                     nameBtn.innerHTML = `<strong>${highlightHTML(p.name || "(Unnamed)", qRaw)}</strong>`;
+                    nameBtn.setAttribute("aria-label", `Open ${p.name || "Pokémon"} entry`);
                     nameBtn.addEventListener("click", () => openPokemonOverlay(p));
                     row1.appendChild(nameBtn);
-                    if (p.form) {
-                        const sep = document.createElement("span"); sep.textContent = " ";
-                        const form = document.createElement("span"); form.className = "muted";
-                        form.innerHTML = highlightHTML(`• ${p.form}`, qRaw);
-                        row1.appendChild(sep); row1.appendChild(form);
-                    }
 
+                    if (p.form) {
+                        const sep = document.createElement("span");
+                        sep.textContent = " ";
+                        const form = document.createElement("span");
+                        form.className = "muted";
+                        form.innerHTML = highlightHTML(`• ${p.form}`, qRaw);
+                        row1.appendChild(sep);
+                        row1.appendChild(form);
+                    }
                     title.appendChild(row1);
 
-                    // Second line: id/types
+                    // --- Second line: id/types ---
                     const row2 = document.createElement("div");
                     row2.className = "muted";
                     const idTypes = `#${p.id} • ${[p.type1, p.type2].filter(Boolean).join(" / ") || "—"}`;
@@ -690,13 +860,17 @@
 
                     const score = document.createElement("div");
                     score.innerHTML = `<span class="pill">Relevancy: ${h.relevancy}</span>`;
-                    header.appendChild(img); header.appendChild(title); header.appendChild(score);
+
+                    header.appendChild(imgBtn);
+                    header.appendChild(title);
+                    header.appendChild(score);
                     card.appendChild(header);
 
                     if (fieldMatches.length) {
                         const fieldsBox = document.createElement("div");
                         fieldsBox.innerHTML = `<div class="section-title">Fields</div>`;
-                        const list = document.createElement("div"); list.className = "fields";
+                        const list = document.createElement("div");
+                        list.className = "fields";
                         for (const m of fieldMatches) {
                             const label = m.label.replace(/^./, c => c.toUpperCase());
                             const div = document.createElement("div");
@@ -710,12 +884,14 @@
                     if (dexMatches.length) {
                         const dexBox = document.createElement("div");
                         dexBox.innerHTML = `<div class="section-title">Pokédex entries (oldest unique matches)</div>`;
-                        const list = document.createElement("div"); list.className = "dex";
+                        const list = document.createElement("div");
+                        list.className = "dex";
                         for (const dm of dexMatches) {
                             const g = DATA.games.find(x => x.id === dm.gameId);
                             const gTitle = g ? g.title : dm.gameId;
                             const date = (g && g.releaseDate) ? new Date(g.releaseDate).toISOString().slice(0, 10) : "—";
-                            const item = document.createElement("div"); item.className = "dex-entry";
+                            const item = document.createElement("div");
+                            item.className = "dex-entry";
                             const gameColor = g && /^#[0-9a-f]{6}$/i.test(g.colorHex) ? g.colorHex.toUpperCase() : "#888888";
                             item.setAttribute("style", `--dex_color:${gameColor}`);
                             item.innerHTML = `<div class="muted">${safeHtml(gTitle)} • ${safeHtml(date)}</div><div>${highlightHTML(dm.entry, qRaw)}</div>`;
@@ -726,6 +902,104 @@
                     }
 
                     results.appendChild(card);
+                }
+
+
+
+
+                // ===== Game Corpus matches (after Pokémon hits) =====
+                const qLower = q;
+                const gamesWithCorpus = DATA.games.filter(g => (g.corpusSlug || "").trim());
+                let totalGameMatches = 0;
+
+                for (const g of gamesWithCorpus) {
+                    const { lines } = await loadCorpus(g.corpusSlug);
+                    if (!lines.length) continue;
+
+                    // collect matching lines (case-insensitive)
+                    const matches = [];
+                    const MAX_LINES_PER_GAME = 50; // safety cap to avoid massive cards
+                    for (let i = 0; i < lines.length; i++) {
+                        const line = lines[i];
+                        if (!line) continue;
+                        if (line.toLowerCase().includes(qLower)) {
+                            matches.push({ idx: i + 1, text: line });
+                            if (matches.length >= MAX_LINES_PER_GAME) break;
+                        }
+                    }
+                    if (!matches.length) continue;
+                    totalGameMatches += matches.length;
+
+                    // Build a game result card
+                    const card = document.createElement("div");
+                    card.className = "result";
+
+                    const header = document.createElement("div");
+                    header.className = "result-header";
+
+                    // game image
+                    const img = document.createElement("div");
+                    img.className = "result-img";
+                    if (g.imageSlug) lazyBg(img, GAME_IMG(g.imageSlug));
+                    img.style.cursor = "pointer";
+                    img.setAttribute("aria-label", `Open corpus for ${g.title || "Game"}`);
+                    img.addEventListener("click", () => openCorpusOverlayForGame(g));
+
+                    // title + meta
+                    const title = document.createElement("div");
+                    const row1 = document.createElement("div");
+
+                    // Clickable title that opens the corpus overlay
+                    const titleBtn = document.createElement("button");
+                    titleBtn.type = "button";
+                    titleBtn.className = "link-btn"; // style to look like a link (CSS below)
+                    titleBtn.textContent = g.title || "(Game)";
+                    titleBtn.setAttribute("aria-label", `View corpus for ${g.title || "Game"}`);
+                    titleBtn.addEventListener("click", (e) => {
+                        e.preventDefault();
+                        openCorpusOverlayForGame(g);
+                    });
+
+                    const titleStrong = document.createElement("strong");
+                    titleStrong.appendChild(titleBtn);
+                    row1.appendChild(titleStrong);
+                    const row2 = document.createElement("div");
+                    row2.className = "muted";
+                    const date = g.releaseDate ? new Date(g.releaseDate).toISOString().slice(0, 10) : "—";
+                    row2.innerHTML = `${safeHtml(g.console || "—")} • ${safeHtml(date)}`;
+                    title.appendChild(row1);
+                    title.appendChild(row2);
+
+                    header.appendChild(img);
+                    header.appendChild(title);
+
+                    // Score/pill like Pokémon results (optional)
+                    const score = document.createElement("div");
+                    score.innerHTML = `<span class="pill">${matches.length} line${matches.length === 1 ? "" : "s"}</span>`;
+                    header.appendChild(score);
+
+                    card.appendChild(header);
+
+                    // Lines
+                    const linesBox = document.createElement("div");
+                    linesBox.innerHTML = `<div class="section-title">Corpus lines</div>`;
+                    const list = document.createElement("div");
+                    for (const m of matches) {
+                        const p = document.createElement("p");
+                        p.className = "corpus_line";
+                        // highlight query (uses your existing helper)
+                        p.innerHTML = `${m.idx} : ${highlightHTML(m.text, qRaw)}`;
+                        list.appendChild(p);
+                    }
+                    linesBox.appendChild(list);
+                    card.appendChild(linesBox);
+
+                    results.appendChild(card);
+                }
+
+                // update summary to mention game corpus hits (optional)
+                if (totalGameMatches > 0) {
+                    summary.textContent = `${hits.length} Pokémon matched for “${qRaw}” • ${totalGameMatches} corpus line${totalGameMatches === 1 ? "" : "s"} in games.`;
                 }
             }
 
@@ -805,7 +1079,7 @@
                 const p = { id: "", name: "", form: "", species: "", evolution: "", type1: "", type2: "", hp: null, attack: null, defense: null, spAtk: null, spDef: null, speed: null, pokedex: {} };
                 p._tempId = crypto.randomUUID(); DATA.pokemon.push(p); selectedId = p._tempId;
             } else {
-                const g = { id: crypto.randomUUID(), title: "New Game", releaseDate: "", console: "", colorHex: "#888888", imageSlug: "" };
+                const g = { id: crypto.randomUUID(), title: "New Game", releaseDate: "", console: "", colorHex: "#888888", imageSlug: "", corpusSlug: "" };
                 DATA.games.push(g); selectedId = g.id;
             }
             updateDatasetSummary(); renderAdminView(); renderMain();
@@ -983,6 +1257,7 @@
                 prevLabel.textContent = "Image Preview (images/pkmn/ID.webp — case sensitive)";
                 const prev = document.createElement("div");
                 prev.className = "img-preview";
+
                 prevBox.appendChild(prevLabel);
                 prevBox.appendChild(prev);
                 basicGrid.appendChild(prevBox);
@@ -1227,6 +1502,14 @@
                 slugRow.appendChild(fieldWrap);
                 wrap.appendChild(slugRow);
 
+                const corpusField = makeField(
+                    "Corpus Slug (corpus/slug.txt)",
+                    "text",
+                    g.corpusSlug ?? "",
+                    (val) => { g.corpusSlug = val; }
+                );
+                wrap.appendChild(corpusField.container);
+
                 function updateGamePrev() {
                     const slug = (g.imageSlug || "").trim();
                     const url = slug ? GAME_IMG(slug) : "";
@@ -1259,7 +1542,16 @@
             back.className = "btn";
             back.textContent = "← Back to Games";
             back.addEventListener("click", () => { mainView = "games"; renderMain(); });
-            headTop.appendChild(hTitle); headTop.appendChild(back);
+            headTop.appendChild(hTitle);
+            if ((game.corpusSlug || "").trim()) {
+                const corpusBtn = document.createElement("button");
+                corpusBtn.className = "btn accent";
+                corpusBtn.textContent = "View Corpus";
+                corpusBtn.addEventListener("click", () => openCorpusOverlayForGame(game));
+                headTop.appendChild(corpusBtn);
+            }
+
+            headTop.appendChild(back);
 
             const meta = document.createElement("div");
             meta.className = "row muted";
@@ -1297,14 +1589,23 @@
             const grid = document.createElement("div");
             grid.className = "grid";
             for (const p of filtered) {
-                const card = document.createElement("div"); card.className = "card";
+                const card = document.createElement("div");
+                card.className = "card";
                 setTypeData(card, p);
-                const img = document.createElement("div"); img.className = "img";
-                lazyBg(img, PKMN_IMG(p.id));
 
+                // Image (click to open overlay)
+                const img = document.createElement("div");
+                img.className = "img";
+                lazyBg(img, PKMN_IMG(p.id));
+                const imgBtn = img; // use same naming so the pattern matches elsewhere
+                imgBtn.style.cursor = "pointer";
+                imgBtn.addEventListener("click", () => openPokemonOverlay(p));
+                card.appendChild(imgBtn);
+
+                // Title (name clickable) + form
                 const title = document.createElement("div");
                 const nameBtn = document.createElement("button");
-                nameBtn.className = "btn linkish";
+                nameBtn.className = "link-btn";
                 nameBtn.style.padding = "0";
                 nameBtn.style.background = "transparent";
                 nameBtn.style.border = "0";
@@ -1312,20 +1613,33 @@
                 nameBtn.style.cursor = "pointer";
                 nameBtn.innerHTML = `<strong>${safeHtml(p.name || "(Unnamed)")}</strong>`;
                 nameBtn.addEventListener("click", () => openPokemonOverlay(p));
+
                 const formSpan = document.createElement("span");
                 formSpan.className = "muted";
                 formSpan.textContent = p.form || "";
+
                 title.appendChild(nameBtn);
                 title.appendChild(document.createTextNode(" "));
                 title.appendChild(formSpan);
 
+                // Meta
                 const meta = document.createElement("div");
                 meta.className = "row muted";
                 const pd = p.pokedex?.[game.id] || {};
                 const dexNo = (pd.regionalDexNumber && String(pd.regionalDexNumber).trim()) ? `#${pd.regionalDexNumber}` : "—";
-                meta.innerHTML = `<span class="pill">${safeHtml(dexNo)}</span><span class="pill">${safeHtml([p.type1, p.type2].filter(Boolean).join(" / ") || "—")}</span>`;
+                let typeHTML = "";
+                if (p.type1 && p.type2) {
+                    typeHTML = `<p class="pill pill-types"><span data-type1="${safeHtml(p.type1.toLowerCase())}">${safeHtml(p.type1)}</span> <span data-type2="${safeHtml(p.type2.toLowerCase())}">${safeHtml(p.type2)}</span></p>`;
+                } else if (p.type1) {
+                    typeHTML = `<p class="pill pill-types"><span data-type1="${safeHtml(p.type1.toLowerCase())}">${safeHtml(p.type1)}</span></p>`;
+                } else {
+                    typeHTML = `<p class="pill">—</p>`;
+                }
 
-                card.appendChild(img); card.appendChild(title); card.appendChild(meta);
+                meta.innerHTML = `<span class="pill">${safeHtml(dexNo)}</span>${typeHTML}`;
+
+                card.appendChild(title);
+                card.appendChild(meta);
                 grid.appendChild(card);
             }
 

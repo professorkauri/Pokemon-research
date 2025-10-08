@@ -5,7 +5,116 @@
   --shadow_hover: 0 10px 30px rgba(0, 0, 0, 0.35);
   --shadow: 0 0px 10px rgba(0, 0, 0, 0.35);
   --radius: 14px;
+
+  
+  --type-normal: #E0E0C8;
+  --type-normal-d: #818159;
+  --type-fire: #FFAC59;
+  --type-fire-d: #A65300;
+  --type-water: #74ACF5;
+  --type-water-d: #1B539B;
+  --type-electric: #FFE673;
+  --type-electric-d: #A78900;
+  --type-grass: #81D580;
+  --type-grass-d: #306C2F;
+  --type-flying: #ADD2F5;
+  --type-flying-d: #54789B;
+  --type-poison: #B884DD;
+  --type-poison-d: #5E2A84;
+  --type-ground: #B88E6F;
+  --type-ground-d: #5E3515;
+  --type-psychic: #F584A8;
+  --type-psychic-d: #9B2A4F;
+  --type-bug: #C2D21E;
+  --type-bug-d: #606B00;
+  --type-rock: #D8BC86;
+  --type-rock-d: #6B5630;
+  --type-ghost: #9E84D9;
+  --type-ghost-d: #4F2B82;
+  --type-dragon: #8573F5;
+  --type-dragon-d: #2E2174;
+  --type-dark: #A89F9F;
+  --type-dark-d: #403030;
+  --type-steel: #A8A8C0;
+  --type-steel-d: #50505A;
+  --type-fairy: #F1A8F1;
+  --type-fairy-d: #7B3B7B;
+  --type-ice: #A8E5E5;
+  --type-ice-d: #307070;
+  --type-unknown: #68A090;
+  --type-unknown-d: #44685E;
+  --type-stellar: #FFD65C;
+  --type-stellar-d: #9B6A00;
 }
+
+
+
+/* =====================================================
+   🌈 POKÉMON TYPE COLOUR VARIABLES & CARD STYLING
+   ===================================================== */
+
+/* === Map attributes to usable variables === */
+[data-type1="normal"]  { --type1: var(--type-normal); }
+[data-type2="normal"]  { --type2: var(--type-normal); }
+
+[data-type1="fire"]    { --type1: var(--type-fire); }
+[data-type2="fire"]    { --type2: var(--type-fire); }
+
+[data-type1="water"]   { --type1: var(--type-water); }
+[data-type2="water"]   { --type2: var(--type-water); }
+
+[data-type1="grass"]   { --type1: var(--type-grass); }
+[data-type2="grass"]   { --type2: var(--type-grass); }
+
+[data-type1="electric"]{ --type1: var(--type-electric); }
+[data-type2="electric"]{ --type2: var(--type-electric); }
+
+[data-type1="ice"]     { --type1: var(--type-ice); }
+[data-type2="ice"]     { --type2: var(--type-ice); }
+
+[data-type1="fighting"]{ --type1: var(--type-fighting); }
+[data-type2="fighting"]{ --type2: var(--type-fighting); }
+
+[data-type1="poison"]  { --type1: var(--type-poison); }
+[data-type2="poison"]  { --type2: var(--type-poison); }
+
+[data-type1="ground"]  { --type1: var(--type-ground); }
+[data-type2="ground"]  { --type2: var(--type-ground); }
+
+[data-type1="flying"]  { --type1: var(--type-flying); }
+[data-type2="flying"]  { --type2: var(--type-flying); }
+
+[data-type1="psychic"] { --type1: var(--type-psychic); }
+[data-type2="psychic"] { --type2: var(--type-psychic); }
+
+[data-type1="bug"]     { --type1: var(--type-bug); }
+[data-type2="bug"]     { --type2: var(--type-bug); }
+
+[data-type1="rock"]    { --type1: var(--type-rock); }
+[data-type2="rock"]    { --type2: var(--type-rock); }
+
+[data-type1="ghost"]   { --type1: var(--type-ghost); }
+[data-type2="ghost"]   { --type2: var(--type-ghost); }
+
+[data-type1="dragon"]  { --type1: var(--type-dragon); }
+[data-type2="dragon"]  { --type2: var(--type-dragon); }
+
+[data-type1="dark"]    { --type1: var(--type-dark); }
+[data-type2="dark"]    { --type2: var(--type-dark); }
+
+[data-type1="steel"]   { --type1: var(--type-steel); }
+[data-type2="steel"]   { --type2: var(--type-steel); }
+
+[data-type1="fairy"]   { --type1: var(--type-fairy); }
+[data-type2="fairy"]   { --type2: var(--type-fairy); }
+
+[data-type1="unknown"]   { --type1: var(--type-unknown); }
+[data-type2="unknown"]   { --type2: var(--type-unknown); }
+
+[data-type1="stellar"]   { --type1: var(--type-stellar); }
+[data-type2="stellar"]   { --type2: var(--type-stellar); }
+
+
 html,
 body {
   height: 100%;
@@ -129,7 +238,7 @@ main {
 
 .grid {
   display: grid;
-  gap: 12px;
+  gap: 1em;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
 }
 
@@ -150,12 +259,48 @@ main {
 }
 
 .pill {
+  display:flex;
+  flex-direction: row;
+  gap:0;
+  justify-content: center;
+  align-items: center;
   font-size: 12px;
   color: var(--muted);
   background: var(--g-panel);
   border: 1px solid var(--g-outline);
   border-radius: 999px;
   padding: 4px 8px;
+  margin: 0;
+}
+
+.pill.pill-types {
+  padding:0px;
+  border:none;
+  background:transparent;
+}
+
+.pill span[data-type1] {
+  background-color:var(--type1);
+  color:white;
+}
+
+.pill span[data-type2] {
+  background-color:var(--type2);
+  color:white;
+}
+.pill span:first-child {
+  padding:4px 5px 4px 10px;
+  border-top-left-radius: 10px;
+  border-bottom-left-radius: 10px;
+}
+.pill span:last-child {
+  padding:4px 10px 4px 5px;
+  border-top-right-radius: 10px;
+  border-bottom-right-radius: 10px; 
+}
+.pill span:only-child {
+  padding:4px 10px;
+  border-radius: 10px;
 }
 
 .muted {
@@ -177,6 +322,7 @@ main {
   background: var(--background) center/cover no-repeat;
   border: 1px solid var(--g-bar);
   border-radius: 10px;
+  margin: 0 auto;
 }
 
 .search-wrap {
@@ -449,6 +595,7 @@ select::after {
   border-radius: 12px;
   background: var(--g-bar);
   padding: 12px;
+  margin-bottom: 1em;
 }
 
 .subsection h4 {
@@ -503,90 +650,27 @@ select::after {
 }
 
 
+.link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: var(--link, #2563eb);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.link-btn:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+
 
 
 
 /* Example: border by game color */
 .dex-entry { border: 1px solid var(--dex_color); }
-
-/* =====================================================
-   🌈 POKÉMON TYPE COLOUR VARIABLES & CARD STYLING
-   ===================================================== */
-
-/* === Type base colours === */
-*[data-type1="normal"], *[data-type2="normal"]   { --type-normal:  #8a8a59; }
-*[data-type1="fire"], *[data-type2="fire"]       { --type-fire:    #a65300; }
-*[data-type1="water"], *[data-type2="water"]     { --type-water:   #1b539b; }
-*[data-type1="grass"], *[data-type2="grass"]     { --type-grass:   #3a8f3a; }
-*[data-type1="electric"], *[data-type2="electric"] { --type-electric:#bbaa00; }
-*[data-type1="ice"], *[data-type2="ice"]         { --type-ice:     #56b0b8; }
-*[data-type1="fighting"], *[data-type2="fighting"] { --type-fighting:#803000; }
-*[data-type1="poison"], *[data-type2="poison"]   { --type-poison:  #713970; }
-*[data-type1="ground"], *[data-type2="ground"]   { --type-ground:  #9a8030; }
-*[data-type1="flying"], *[data-type2="flying"]   { --type-flying:  #6d5fc1; }
-*[data-type1="psychic"], *[data-type2="psychic"] { --type-psychic: #d1346b; }
-*[data-type1="bug"], *[data-type2="bug"]         { --type-bug:     #718c1d; }
-*[data-type1="rock"], *[data-type2="rock"]       { --type-rock:    #807030; }
-*[data-type1="ghost"], *[data-type2="ghost"]     { --type-ghost:   #5a5a8a; }
-*[data-type1="dragon"], *[data-type2="dragon"]   { --type-dragon:  #4a38cf; }
-*[data-type1="dark"], *[data-type2="dark"]       { --type-dark:    #403838; }
-*[data-type1="steel"], *[data-type2="steel"]     { --type-steel:   #6e7680; }
-*[data-type1="fairy"], *[data-type2="fairy"]     { --type-fairy:   #c3709a; }
-
-/* === Map attributes to usable variables === */
-[data-type1="normal"]  { --type1: var(--type-normal); }
-[data-type2="normal"]  { --type2: var(--type-normal); }
-
-[data-type1="fire"]    { --type1: var(--type-fire); }
-[data-type2="fire"]    { --type2: var(--type-fire); }
-
-[data-type1="water"]   { --type1: var(--type-water); }
-[data-type2="water"]   { --type2: var(--type-water); }
-
-[data-type1="grass"]   { --type1: var(--type-grass); }
-[data-type2="grass"]   { --type2: var(--type-grass); }
-
-[data-type1="electric"]{ --type1: var(--type-electric); }
-[data-type2="electric"]{ --type2: var(--type-electric); }
-
-[data-type1="ice"]     { --type1: var(--type-ice); }
-[data-type2="ice"]     { --type2: var(--type-ice); }
-
-[data-type1="fighting"]{ --type1: var(--type-fighting); }
-[data-type2="fighting"]{ --type2: var(--type-fighting); }
-
-[data-type1="poison"]  { --type1: var(--type-poison); }
-[data-type2="poison"]  { --type2: var(--type-poison); }
-
-[data-type1="ground"]  { --type1: var(--type-ground); }
-[data-type2="ground"]  { --type2: var(--type-ground); }
-
-[data-type1="flying"]  { --type1: var(--type-flying); }
-[data-type2="flying"]  { --type2: var(--type-flying); }
-
-[data-type1="psychic"] { --type1: var(--type-psychic); }
-[data-type2="psychic"] { --type2: var(--type-psychic); }
-
-[data-type1="bug"]     { --type1: var(--type-bug); }
-[data-type2="bug"]     { --type2: var(--type-bug); }
-
-[data-type1="rock"]    { --type1: var(--type-rock); }
-[data-type2="rock"]    { --type2: var(--type-rock); }
-
-[data-type1="ghost"]   { --type1: var(--type-ghost); }
-[data-type2="ghost"]   { --type2: var(--type-ghost); }
-
-[data-type1="dragon"]  { --type1: var(--type-dragon); }
-[data-type2="dragon"]  { --type2: var(--type-dragon); }
-
-[data-type1="dark"]    { --type1: var(--type-dark); }
-[data-type2="dark"]    { --type2: var(--type-dark); }
-
-[data-type1="steel"]   { --type1: var(--type-steel); }
-[data-type2="steel"]   { --type2: var(--type-steel); }
-
-[data-type1="fairy"]   { --type1: var(--type-fairy); }
-[data-type2="fairy"]   { --type2: var(--type-fairy); }
 
 /* === Card visual styling using those variables === */
 .card, .result {
@@ -596,7 +680,11 @@ select::after {
       color-mix(in srgb, var(--type1, transparent) 12%, transparent) 0%,
       color-mix(in srgb, var(--type2, var(--type1, transparent)) 12%, transparent) 100%);
   background-blend-mode: normal, multiply;
-  transition: background 0.3s ease, box-shadow 0.3s ease;
+  transition: background 0.3s ease, box-shadow 0.3s ease;border: 2px solid black;
+  border-left-color: var(--type1);
+  border-top-color: var(--type1);
+  border-right-color: var(--type2);
+  border-bottom-color: var(--type2);
 }
 
 .card:hover, .result:hover {
