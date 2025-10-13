@@ -34,12 +34,7 @@
         <div class="admin-window" role="dialog" aria-modal="true" aria-label="Pokemon Data Admin">
             <div class="admin-header">
                 <div class="admin-title">Pokemon Data Admin</div>
-                <div class="segmented" id="viewTabs" role="tablist" aria-label="Admin View">
-                    <div class="seg active" role="tab" aria-selected="true" data-view="pokemon">Pokemon</div>
-                    <div class="seg" role="tab" aria-selected="false" data-view="games">Games</div>
-                </div>
                 <div class="toolbar">
-                    <span class="pill" id="datasetSummary">0 Pokémon • 0 Games</span>
                     <input id="importInput" type="file" accept="application/json" class="hidden" />
                     <button id="importBtn" class="btn" title="Import data.json">Import JSON</button>
                     <button id="downloadBtn" class="btn primary" title="Download all data as JSON">Download
@@ -51,7 +46,14 @@
             <div class="admin-body">
                 <div class="left-col">
                     <div class="left-header">
-                        <div id="leftTitle">Pokemon</div>
+                        <div id="leftTitle">
+                            <div class="segmented" id="viewTabs" role="tablist" aria-label="Admin View">
+                                <div class="seg active" role="tab" aria-selected="true" data-view="pokemon">Pokemon
+                                </div>
+                                <div class="seg" role="tab" aria-selected="false" data-view="games">Games</div>
+                            </div>
+                            <span class="pill" id="datasetSummary">0 Pokémon • 0 Games</span>
+                        </div>
                         <div class="row">
                             <button id="sortBtn" class="btn" title="Toggle sort mode">A–Z</button>
                             <button id="addBtn" class="btn" title="Add new">+</button>
@@ -1724,7 +1726,6 @@
         const openAdmin = document.getElementById("openAdmin");
         const closeAdmin = document.getElementById("closeAdmin");
         const viewTabs = document.getElementById("viewTabs");
-        const leftTitle = document.getElementById("leftTitle");
         const rightTitle = document.getElementById("rightTitle");
         const leftList = document.getElementById("leftList");
         const leftSearch = document.getElementById("leftSearch");
@@ -1802,7 +1803,6 @@
         });
 
         function renderAdminView() {
-            leftTitle.textContent = adminActiveView === "pokemon" ? "Pokemon" : "Games";
             rightTitle.textContent = "No item selected";
             deleteBtn.style.display = selectedId ? "inline-block" : "none";
 
@@ -1844,7 +1844,6 @@
 
             const filtered = source.filter(item => {
                 const key = (adminActiveView === "pokemon"
-                    // include form in the searchable string
                     ? `${item.name} ${item.form || ""} ${item.id} ${item.species}`.toLowerCase()
                     : `${item.title} ${item.console} ${item.releaseDate}`.toLowerCase()
                 );
@@ -1852,13 +1851,16 @@
             });
 
             for (const item of filtered) {
-                const itemId = adminActiveView === "pokemon" ? (item.id || item._tempId) : item.id;
+                const itemId = (adminActiveView === "pokemon" ? (item.id || item._tempId) : item.id);
+                const isActive = String(itemId) === String(selectedId);
 
                 const div = document.createElement("div");
-                div.className = "list-item" + (itemId === selectedId ? " active" : "");
+                div.className = "list-item" + (isActive ? " active" : "");
+                div.dataset.id = String(itemId);
                 div.setAttribute("role", "option");
+                div.setAttribute("aria-selected", isActive ? "true" : "false");
 
-                // Thumb (small image on the left)
+                // Thumb
                 const thumb = document.createElement("div");
                 thumb.classList.add("list_thumb");
 
@@ -1870,24 +1872,21 @@
                     if (slug) lazyBg(thumb, GAME_IMG(slug));
                 }
 
-
+                // Left block (thumb + title/form)
                 const left = document.createElement("div");
                 left.style.display = "grid";
                 left.style.alignItems = "center";
                 left.style.gridTemplateColumns = "auto 1fr";
                 left.style.columnGap = "8px";
-
                 left.appendChild(thumb);
 
                 const titleWrap = document.createElement("div");
-                // Name (bold)
                 const titleSpan = document.createElement("div");
                 titleSpan.innerHTML = adminActiveView === "pokemon"
                     ? `<strong>${safeHtml(item.name || "(new Pokémon)")}</strong>`
                     : `<strong>${safeHtml(item.title || "(untitled)")}</strong>`;
                 titleWrap.appendChild(titleSpan);
 
-                // Form (muted, smaller, on its own line) — only for Pokémon and only if present
                 if (adminActiveView === "pokemon" && item.form) {
                     const formLine = document.createElement("div");
                     formLine.className = "muted";
@@ -1897,16 +1896,36 @@
                     formLine.textContent = item.form;
                     titleWrap.appendChild(formLine);
                 }
-
                 left.appendChild(titleWrap);
 
+                // Right meta (id or release date)
                 const right = document.createElement("div");
                 right.className = "muted";
                 right.textContent = adminActiveView === "pokemon" ? (item.id || "") : (item.releaseDate || "");
 
                 div.appendChild(left);
                 div.appendChild(right);
-                div.addEventListener("click", () => { selectedId = itemId; renderAdminRight(); });
+
+                // Immediate toggle of .active on click (no full list re-render)
+                div.addEventListener("click", () => {
+                    const newId = div.dataset.id;
+                    if (!newId) return;
+
+                    if (String(selectedId) !== String(newId)) {
+                        selectedId = newId;
+
+                        // Update active row classes/ARIA in-place
+                        list.querySelectorAll(".list-item.active").forEach(el => {
+                            el.classList.remove("active");
+                            el.setAttribute("aria-selected", "false");
+                        });
+                        div.classList.add("active");
+                        div.setAttribute("aria-selected", "true");
+                    }
+
+                    renderAdminRight();
+                });
+
                 list.appendChild(div);
             }
         }
@@ -2137,14 +2156,68 @@
             } else {
                 const g = DATA.games.find(x => x.id === selectedId); if (!g) return;
                 rightTitle.textContent = g.title || "(untitled game)";
-                const wrap = document.createElement("div"); wrap.className = "field-grid";
 
-                // Title / Release / Console
-                wrap.appendChild(makeField("Title", "text", g.title, (val) => { g.title = val; rightTitle.textContent = g.title || "(untitled game)"; refreshLeftList(); }).container);
-                wrap.appendChild(makeField("Release Date", "date", g.releaseDate, (val) => { g.releaseDate = val; refreshLeftList(); }).container);
-                wrap.appendChild(makeField("Console", "text", g.console, (val) => { g.console = val; }).container);
+                // ---------- Primary Info ----------
+                const primary = document.createElement("div");
+                primary.className = "subsection";
+                primary.innerHTML = `<h4>Primary Info</h4>`;
 
-                // === Theme Colour: synced picker + hex input ===
+                const primaryGrid = document.createElement("div");
+                primaryGrid.className = "field-grid";
+
+                primaryGrid.appendChild(
+                    makeField("Title", "text", g.title, (val) => {
+                        g.title = val;
+                        rightTitle.textContent = g.title || "(untitled game)";
+                        refreshLeftList();
+                    }).container
+                );
+
+                primaryGrid.appendChild(
+                    makeField("Release Date", "date", g.releaseDate, (val) => {
+                        g.releaseDate = val;
+                        refreshLeftList();
+                    }).container
+                );
+
+                primaryGrid.appendChild(
+                    makeField("Console", "text", g.console, (val) => { g.console = val; }).container
+                );
+
+                primary.appendChild(primaryGrid);
+
+
+                // ---------- Secondary Info ----------
+                const secondary = document.createElement("div");
+                secondary.className = "subsection";
+                secondary.innerHTML = `<h4>Secondary Info</h4>`;
+
+                const secondaryGrid = document.createElement("div");
+                secondaryGrid.className = "field-grid";
+
+                // Image Slug + preview (preview to the left of the field)
+                const slugField = makeField(
+                    "Image Slug (images/games/slug.webp)",
+                    "text",
+                    g.imageSlug,
+                    (val) => { g.imageSlug = val; updateGamePrev(); refreshLeftList(); },
+                    { className: "field-image-slug" }
+                );
+                const slugRow = document.createElement("div");
+                slugRow.className = "row";
+
+                const gPrev = document.createElement("div");
+                gPrev.className = "img-preview";
+
+                const fieldWrap = document.createElement("div");
+                fieldWrap.style.flex = "1";
+                fieldWrap.appendChild(slugField.container);
+
+                slugRow.appendChild(gPrev);
+                slugRow.appendChild(fieldWrap);
+                secondaryGrid.appendChild(slugRow);
+
+                // Theme Colour: synced picker + hex input
                 (function () {
                     const field = document.createElement("div"); field.className = "field";
                     addFieldNameClass(field, "Theme Colour");
@@ -2179,7 +2252,6 @@
                             hex.style.borderColor = "var(--border)";
                             refreshLeftList();
                         } else {
-                            // visual hint if invalid
                             hex.style.borderColor = "var(--danger)";
                         }
                     });
@@ -2196,47 +2268,41 @@
                     row.appendChild(hex);
                     field.appendChild(lab);
                     field.appendChild(row);
-                    wrap.appendChild(field);
+                    secondaryGrid.appendChild(field);
 
                     function normalizeHex(v) {
-                        // Accept formats: #RRGGBB or RRGGBB (case-insensitive)
                         if (/^#[0-9a-fA-F]{6}$/.test(v)) return v.toUpperCase();
                         if (/^[0-9a-fA-F]{6}$/.test(v)) return ("#" + v).toUpperCase();
                         return null;
                     }
                 })();
 
-                // === Image slug + preview (preview LEFT of field) ===
-                const slugField = makeField("Image Slug (images/games/slug.webp)", "text", g.imageSlug, (val) => { g.imageSlug = val; updateGamePrev(); refreshLeftList(); }, { className: "field-image-slug" });
-                const slugRow = document.createElement("div");
-                slugRow.className = "row";
-                const gPrev = document.createElement("div");
-                gPrev.className = "img-preview";
-                const fieldWrap = document.createElement("div");
-                fieldWrap.style.flex = "1";
-                fieldWrap.appendChild(slugField.container);
-                slugRow.appendChild(gPrev);
-                slugRow.appendChild(fieldWrap);
-                wrap.appendChild(slugRow);
-
+                // Corpus Slug
                 const corpusField = makeField(
                     "Corpus Slug (corpus/slug.txt)",
                     "text",
                     g.corpusSlug ?? "",
-                    (val) => { g.corpusSlug = val; }, { className: "field-corpus-slug" }
+                    (val) => { g.corpusSlug = val; },
+                    { className: "field-corpus-slug" }
                 );
-                wrap.appendChild(corpusField.container);
+                secondaryGrid.appendChild(corpusField.container);
 
+                secondary.appendChild(secondaryGrid);
+
+                // Mount subsections
+                body.appendChild(primary);
+                body.appendChild(secondary);
+
+                // Image preview loader (after mounting)
                 function updateGamePrev() {
                     const slug = (g.imageSlug || "").trim();
                     const url = slug ? GAME_IMG(slug) : "";
                     if (!url) { gPrev.style.backgroundImage = "none"; return; }
                     loadBgOnce(url, () => applyBg(gPrev, url), () => { gPrev.style.backgroundImage = "none"; });
                 }
-
-                body.appendChild(wrap);
                 updateGamePrev();
             }
+
         }
 
         function renderGameCatalog(game) {

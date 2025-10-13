@@ -3,7 +3,7 @@
   --danger: #ff6b6b;
   --ok: #54e38e;
   --shadow_hover: 0 10px 30px rgba(0, 0, 0, 0.35);
-  --shadow: 0 0px 10px rgba(0, 0, 0, 0.35);
+  --shadow: 0 0px 0px rgba(0, 0, 0, 0.35);
   --radius: 14px;
 
   --type-normal: #e0e0c8;
@@ -266,7 +266,7 @@ header {
   background: var(--g-panel);
   border: 1px solid var(--g-bar);
   border-radius: 999px;
-  padding: 4px;
+  padding: 0;
   gap: 4px;
 }
 
@@ -730,11 +730,6 @@ main {
   width: 100%;
 }
 
-.field-image .img-preview {
-  width: 60px !important;
-  height: 60px !important;
-}
-
 select::after {
   display: block;
   position: relative;
@@ -751,6 +746,16 @@ select::after {
   border: 1px solid var(--g-bar);
   border-radius: 12px;
   background: var(--background) center/contain no-repeat;
+}
+
+.field-image .img-preview {
+  width: 60px;
+  height: 60px;
+}
+
+.row .img-preview {
+  width: 60px;
+  height: 90px;
 }
 
 .list_thumb {
@@ -802,12 +807,12 @@ select::after {
 /* Tint Game cards using their --dex_color */
 .grid .card[style*="--dex_color"] {
   border: 1px solid var(--dex_color);
-  box-shadow: 0 0 8px color-mix(in srgb, var(--dex_color) 25%, transparent);
+  box-shadow: var(--shadow);
   transition: transform 0.15s ease, box-shadow 0.25s ease;
 }
 .grid .card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 0 12px color-mix(in srgb, var(--dex_color) 40%, transparent);
+  box-shadow: var(--shadow_hover);
 }
 
 /* Search highlight */
