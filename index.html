@@ -14,9 +14,9 @@
 
         <!-- Main view switcher -->
         <div id="mainTabs" class="segmented" role="tablist" aria-label="Main view">
-            <div class="seg active" role="tab" aria-selected="true" data-view="browse">Browse All</div>
+            <div class="seg active" role="tab" aria-selected="true" data-view="search">Search</div>
+            <div class="seg" role="tab" aria-selected="false" data-view="browse">Browse All</div>
             <div class="seg" role="tab" aria-selected="false" data-view="games">Games</div>
-            <div class="seg" role="tab" aria-selected="false" data-view="search">Search</div>
         </div>
 
         <div style="text-align:right">
@@ -99,6 +99,12 @@
         <div class="admin-window" role="dialog" aria-modal="true" aria-label="Game corpus" style="max-width:960px;">
             <div class="admin-header">
                 <div class="admin-title" id="corpusOverlayTitle">Corpus</div>
+                <label class="goto">
+                    Go to line:
+                    <input id="gotoLine" type="number" min="1" placeholder="e.g. 128" inputmode="numeric"
+                        aria-label="Go to line" />
+                    <button id="gotoBtn" class="btn">Go</button>
+                </label>
                 <div class="toolbar">
                     <button id="corpusOverlayClose" class="btn">Close</button>
                 </div>
@@ -160,7 +166,7 @@
         let pokemonSortMode = "AZ"; // "AZ" | "09"
         let gameSortMode = "DATE";  // "DATE" | "AZ"
 
-        let mainView = "browse";  // "browse" | "games" | "search"
+        let mainView = "search";  // "browse" | "games" | "search"
 
         const PKMN_IMG = (id) => `images/pkmn/${encodeURIComponent(id)}.webp`;
         const GAME_IMG = (slug) => `images/games/${encodeURIComponent(slug)}.webp`;
@@ -471,6 +477,25 @@
 
             pkmnOverlay.classList.add("open");
             pkmnOverlay.setAttribute("aria-hidden", "false");
+
+            // --- Related mentions (search results that reference this Pokémon) ---
+            const related = document.createElement("div");
+            related.className = "subsection";
+            related.innerHTML = `<h4>Related mentions</h4><div class="muted">Search results that reference “${safeHtml(p.name)}”.</div>`;
+            const relMount = document.createElement("div");
+            relMount.style.marginTop = "8px";
+            related.appendChild(relMount);
+
+            // Add after the existing sections
+            pkmnOverlayBody.appendChild(related);
+
+            // Reuse shared renderer; exclude the current Pokémon; compact layout
+            renderSearchResultsInto({
+            query: p.name || "",
+            mountEl: relMount,
+            excludePokemonId: p.id || null,
+            compact: true
+            });
         }
 
         function closePokemonOverlay() {
@@ -539,7 +564,7 @@
             corpusOverlayBody.innerHTML = "";
         }
 
-        async function openCorpusOverlayForGame(game) {
+        async function openCorpusOverlayForGame(game, initialLine = null) {
             corpusOverlayTitle.textContent = `${game.title || "Game"} — Corpus`;
             corpusOverlayBody.innerHTML = `<div class="muted">Loading corpus…</div>`;
 
@@ -548,11 +573,13 @@
             list.style.display = "grid";
             list.style.gap = "6px";
 
-            // render every line with numbers
             lines.forEach((line, i) => {
+                const ln = i + 1;
                 const p = document.createElement("p");
-                p.className = "corpus_line";
-                p.textContent = `${i + 1} : ${line}`;
+                p.className = "corpus_line line";
+                p.id = `L${ln}`;
+                p.setAttribute("data-line", String(ln));
+                p.textContent = `${ln} : ${line}`;
                 list.appendChild(p);
             });
 
@@ -560,6 +587,26 @@
             corpusOverlayBody.appendChild(list);
             corpusOverlay.classList.add("open");
             corpusOverlay.setAttribute("aria-hidden", "false");
+
+            // Keep the "Go to line" input in sync with line count (optional)
+            const goto = document.getElementById('gotoLine');
+            if (goto) goto.max = String(lines.length || 1);
+
+            // If a target line was provided, jump + highlight it
+            if (initialLine != null) {
+                // clear any previous highlight
+                corpusOverlay.querySelectorAll('.line-highlight')
+                .forEach(el => el.classList.remove('line-highlight'));
+
+                const target =
+                corpusOverlay.querySelector(`[data-line="${initialLine}"]`) ||
+                corpusOverlay.querySelector(`#L${initialLine}`);
+                if (target) {
+                target.classList.add('line-highlight');
+                target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                if (goto) goto.value = String(initialLine);
+                }
+            }
         }
 
         corpusOverlay?.addEventListener("click", (e) => {
@@ -569,6 +616,356 @@
         document.addEventListener("keydown", (e) => {
             if (e.key === "Escape" && corpusOverlay.classList.contains("open")) closeCorpusOverlay();
         });
+
+        function setupGotoLine() {
+            const overlay = document.querySelector('#corpusOverlay') || document;
+            const input = document.getElementById('gotoLine');
+            const btn = document.getElementById('gotoBtn');
+            if (!overlay || !input) return;
+
+            // Keep track of the currently highlighted element
+            let lastHighlighted = null;
+
+            function findLine(n) {
+                return (
+                    overlay.querySelector(`[data-line="${n}"]`) ||
+                    overlay.querySelector(`#L${n}`) ||
+                    overlay.querySelector(`.line[data-ln="${n}"]`) ||
+                    (function () {
+                        const candidates = overlay.querySelectorAll(
+                            '[data-line], [data-ln], .line, .corpus_line'
+                        );
+                        if (!candidates.length) return null;
+                        const idx = Math.max(1, Math.min(n, candidates.length)) - 1;
+                        return candidates[idx] || null;
+                    })()
+                );
+            }
+
+            function jumpToLine(n) {
+                if (!Number.isFinite(n) || n < 1) return;
+                const el = findLine(n);
+                if (!el) return;
+
+                el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+
+                // Toggle persistent highlight (no animation)
+                if (lastHighlighted && lastHighlighted !== el) {
+                    lastHighlighted.classList.remove('line-highlight');
+                }
+                el.classList.add('line-highlight');
+                lastHighlighted = el;
+            }
+
+            // Press Enter to jump
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    const n = parseInt(input.value, 10);
+                    jumpToLine(n);
+                }
+            });
+
+            // Click the "Go" button to jump
+            if (btn) {
+                btn.addEventListener('click', () => {
+                    const n = parseInt(input.value, 10);
+                    jumpToLine(n);
+                });
+            }
+
+            // Auto-focus when overlay opens
+            const observer = new MutationObserver(() => {
+                if (overlay.classList.contains('open')) {
+                    input.focus();
+                    input.select();
+                }
+            });
+            observer.observe(overlay, { attributes: true, attributeFilter: ['class'] });
+        }
+
+
+        setupGotoLine();
+
+
+        /**
+         * Renders search results into a mount element.
+         * Options:
+         *  - excludePokemonId: string | null  -> skip this Pokémon in results
+         *  - compact: boolean                 -> hide the summary line and tighten spacing
+         */
+        async function renderSearchResultsInto({ query, mountEl, excludePokemonId = null, compact = false }) {
+        const qRaw = String(query || "");
+        const q = qRaw.trim().toLowerCase();
+        mountEl.innerHTML = "";
+        if (!q) return;
+
+        // Build a quick lookup for game release dates/titles
+        const gameById = Object.create(null);
+        for (const g of DATA.games) gameById[g.id] = g;
+
+        const results = document.createElement("div");
+        results.className = "results";
+        mountEl.appendChild(results);
+
+        // ---------- Pokémon scan (same as renderSearch, with an optional exclusion) ----------
+        const hits = [];
+        for (const p of DATA.pokemon) {
+            if (excludePokemonId && String(p.id) === String(excludePokemonId)) continue;
+
+            let relevancy = 0;
+            const fieldMatches = [];
+
+            const fields = {
+            id: p.id, name: p.name, category: p.category, form: p.form, species: p.species,
+            evolution: p.evolution, type1: p.type1, type2: p.type2
+            };
+
+            for (const [k, v] of Object.entries(fields)) {
+            const s = String(v || "");
+            if (s && s.toLowerCase().includes(q)) {
+                relevancy++;
+                fieldMatches.push({ label: k, value: s });
+            }
+            }
+
+            // Pokédex entries (oldest per unique text)
+            const pdx = p.pokedex || {};
+            const dexMatchesByText = new Map();
+            for (const [gameId, obj] of Object.entries(pdx)) {
+            const entry = obj && obj.entry ? String(obj.entry) : "";
+            if (!entry) continue;
+            if (entry.toLowerCase().includes(q)) {
+                relevancy++;
+                const textKey = entry.trim().replace(/\s+/g, " ");
+                const g = gameById[gameId];
+                const dateMs = g && g.releaseDate ? Date.parse(g.releaseDate) : Number.POSITIVE_INFINITY;
+                const cur = dexMatchesByText.get(textKey);
+                if (!cur || dateMs < cur.dateMs) dexMatchesByText.set(textKey, { gameId, entry, dateMs });
+            }
+            }
+
+            if (relevancy > 0) {
+            hits.push({
+                p,
+                relevancy,
+                fieldMatches,
+                dexMatches: Array.from(dexMatchesByText.values()).sort((a, b) => a.dateMs - b.dateMs)
+            });
+            }
+        }
+
+        hits.sort((A, B) => (B.relevancy - A.relevancy) || idComparator(A.p, B.p));
+
+        for (const h of hits) {
+            const { p, fieldMatches, dexMatches } = h;
+
+            const card = document.createElement("div");
+            card.className = "result";
+            setTypeData(card, p);
+
+            const header = document.createElement("div");
+            header.className = "result-header";
+
+            // clickable image
+            const imgBtn = document.createElement("button");
+            imgBtn.className = "link-btn";
+            imgBtn.style.padding = "0";
+            imgBtn.style.background = "transparent";
+            imgBtn.style.border = "0";
+            imgBtn.style.color = "inherit";
+            imgBtn.style.cursor = "pointer";
+            imgBtn.setAttribute("aria-label", `Open ${p.name || "Pokémon"} entry`);
+            const img = document.createElement("div");
+            img.className = "result-img";
+            lazyBg(img, PKMN_IMG(p.id));
+            imgBtn.appendChild(img);
+            imgBtn.addEventListener("click", () => openPokemonOverlay(p));
+
+            const title = document.createElement("div");
+            const row1 = document.createElement("div");
+            const nameBtn = document.createElement("button");
+            nameBtn.className = "link-btn";
+            nameBtn.style.padding = "0";
+            nameBtn.style.background = "transparent";
+            nameBtn.style.border = "0";
+            nameBtn.style.color = "inherit";
+            nameBtn.style.cursor = "pointer";
+            nameBtn.innerHTML = `<strong>${highlightHTML(p.name || "(Unnamed)", qRaw)}</strong>`;
+            nameBtn.setAttribute("aria-label", `Open ${p.name || "Pokémon"} entry`);
+            nameBtn.addEventListener("click", () => openPokemonOverlay(p));
+            row1.appendChild(nameBtn);
+
+            if (p.form) {
+            const sep = document.createElement("span"); sep.textContent = " ";
+            const form = document.createElement("span");
+            form.className = "muted";
+            form.innerHTML = highlightHTML(`• ${p.form}`, qRaw);
+            row1.appendChild(sep);
+            row1.appendChild(form);
+            }
+            title.appendChild(row1);
+
+            const row2 = document.createElement("div");
+            row2.className = "muted";
+            const idTypes = `#${p.id} • ${[p.type1, p.type2].filter(Boolean).join(" / ") || "—"}`;
+            row2.innerHTML = highlightHTML(idTypes, qRaw);
+            title.appendChild(row2);
+
+            const score = document.createElement("div");
+            if (!compact) score.innerHTML = `<span class="pill">Relevancy: ${h.relevancy}</span>`;
+
+            header.appendChild(imgBtn);
+            header.appendChild(title);
+            if (!compact) header.appendChild(score);
+            card.appendChild(header);
+
+            if (fieldMatches.length) {
+            const fieldsBox = document.createElement("div");
+            fieldsBox.innerHTML = `<div class="section-title">Fields</div>`;
+            const list = document.createElement("div");
+            list.className = "fields";
+            for (const m of fieldMatches) {
+                const label = m.label.replace(/^./, c => c.toUpperCase());
+                const div = document.createElement("div");
+                div.innerHTML = `<span class="muted">${safeHtml(label)}:</span> ${highlightHTML(m.value, qRaw)}`;
+                list.appendChild(div);
+            }
+            fieldsBox.appendChild(list);
+            card.appendChild(fieldsBox);
+            }
+
+            if (dexMatches.length) {
+            const dexBox = document.createElement("div");
+            dexBox.innerHTML = `<div class="section-title">Pokédex entries (oldest unique matches)</div>`;
+            const list = document.createElement("div");
+            list.className = "dex";
+            for (const dm of dexMatches) {
+                const g = DATA.games.find(x => x.id === dm.gameId);
+                const gTitle = g ? g.title : dm.gameId;
+                const date = (g && g.releaseDate) ? new Date(g.releaseDate).toISOString().slice(0, 10) : "—";
+                const item = document.createElement("div");
+                item.className = "dex-entry";
+                const gameColor = g && /^#[0-9a-f]{6}$/i.test(g.colorHex) ? g.colorHex.toUpperCase() : "#888888";
+                item.setAttribute("style", `--dex_color:${gameColor}`);
+                item.innerHTML = `<div class="muted">${safeHtml(gTitle)} • ${safeHtml(date)}</div><div>${highlightHTML(dm.entry, qRaw)}</div>`;
+                list.appendChild(item);
+            }
+            dexBox.appendChild(list);
+            card.appendChild(dexBox);
+            }
+
+            results.appendChild(card);
+        }
+
+        // ---------- Game corpora ----------
+        const qLower = q;
+        const gamesWithCorpus = DATA.games.filter(g => (g.corpusSlug || "").trim());
+        for (const g of gamesWithCorpus) {
+            const { lines } = await loadCorpus(g.corpusSlug);
+            if (!lines.length) continue;
+
+            const matches = [];
+            const MAX_LINES_PER_GAME = 50;
+            for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            if (line && line.toLowerCase().includes(qLower)) {
+                matches.push({ idx: i + 1, text: line });
+                if (matches.length >= MAX_LINES_PER_GAME) break;
+            }
+            }
+            if (!matches.length) continue;
+
+            const card = document.createElement("div");
+            card.className = "result";
+            // make corpus results themeable like Pokémon cards
+            const gameColor = g && /^#[0-9a-f]{6}$/i.test(g.colorHex) ? g.colorHex.toUpperCase() : "#888888";
+            card.setAttribute("style", `--dex_color:${gameColor}`);
+            card.setAttribute("data-type1", "dex");
+            card.setAttribute("data-type2", "dex");
+
+            const header = document.createElement("div");
+            header.className = "result-header";
+
+            const img = document.createElement("div");
+            img.className = "result-img";
+            if (g.imageSlug) lazyBg(img, GAME_IMG(g.imageSlug));
+            img.style.cursor = "pointer";
+            img.setAttribute("aria-label", `Open corpus for ${g.title || "Game"}`);
+            img.addEventListener("click", () => openCorpusOverlayForGame(g));
+
+            const title = document.createElement("div");
+            const row1 = document.createElement("div");
+            const titleBtn = document.createElement("button");
+            titleBtn.type = "button";
+            titleBtn.className = "link-btn";
+            titleBtn.textContent = g.title || "(Game)";
+            titleBtn.setAttribute("aria-label", `View corpus for ${g.title || "Game"}`);
+            titleBtn.addEventListener("click", (e) => { e.preventDefault(); openCorpusOverlayForGame(g); });
+
+            const titleStrong = document.createElement("strong");
+            titleStrong.appendChild(titleBtn);
+            row1.appendChild(titleStrong);
+
+            const row2 = document.createElement("div");
+            row2.className = "muted";
+            const date = g.releaseDate ? new Date(g.releaseDate).toISOString().slice(0, 10) : "—";
+            row2.innerHTML = `${safeHtml(g.console || "—")} • ${safeHtml(date)}`;
+            title.appendChild(row1);
+            title.appendChild(row2);
+
+            header.appendChild(img);
+            header.appendChild(title);
+
+            if (!compact) {
+            const score = document.createElement("div");
+            score.innerHTML = `<span class="pill">${matches.length} line${matches.length === 1 ? "" : "s"}</span>`;
+            header.appendChild(score);
+            }
+
+            card.appendChild(header);
+
+            const linesBox = document.createElement("div");
+            linesBox.innerHTML = `<div class="section-title">Corpus lines</div>`;
+            const list = document.createElement("div");
+            for (const m of matches) {
+            const p = document.createElement("p");
+            p.className = "corpus_line";
+
+            // clickable line number to jump
+            const lnBtn = document.createElement("button");
+            lnBtn.type = "button";
+            lnBtn.className = "link-btn";
+            lnBtn.textContent = String(m.idx);
+            lnBtn.setAttribute("aria-label", `Open corpus and go to line ${m.idx}`);
+            lnBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                openCorpusOverlayForGame(g, m.idx);
+            });
+
+            const sep = document.createTextNode(" : ");
+            const textSpan = document.createElement("span");
+            textSpan.innerHTML = highlightHTML(m.text, qRaw);
+
+            p.appendChild(lnBtn);
+            p.appendChild(sep);
+            p.appendChild(textSpan);
+
+            list.appendChild(p);
+            }
+            linesBox.appendChild(list);
+            card.appendChild(linesBox);
+
+            results.appendChild(card);
+        }
+
+        if (compact) {
+            // light tightening without changing your global CSS
+            results.style.gap = "12px";
+            results.querySelectorAll(".result-header .pill")?.forEach(el => el.remove());
+        }
+        }
+
+
 
 
 
@@ -729,278 +1126,16 @@
             const results = document.createElement("div"); results.className = "results";
 
             async function doSearch() {
-                const qRaw = input.value || ""; const q = qRaw.trim().toLowerCase();
+                const qRaw = input.value || "";
                 results.innerHTML = "";
-                if (!q) { summary.textContent = "Enter a word or phrase to begin."; return; }
-
-                // Build a quick lookup for game release dates/titles
-                const gameById = Object.create(null);
-                for (const g of DATA.games) { gameById[g.id] = g; }
-
-                // Scan Pokémon
-                const hits = [];
-                for (const p of DATA.pokemon) {
-                    let relevancy = 0;
-                    const fieldMatches = [];
-
-                    // Fields to search
-                    const fields = {
-                        id: p.id, name: p.name, category: p.category, form: p.form, species: p.species,
-                        evolution: p.evolution, type1: p.type1, type2: p.type2
-                    };
-                    for (const [k, v] of Object.entries(fields)) {
-                        const s = String(v || "");
-                        if (s && s.toLowerCase().includes(q)) {
-                            relevancy++;
-                            fieldMatches.push({ label: k, value: s });
-                        }
-                    }
-
-                    // Pokédex entries: collect matches; dedupe by entry text, keep OLDEST game
-                    const pdx = p.pokedex || {};
-                    const dexMatchesByText = new Map(); // text -> { gameId, entry }
-                    for (const [gameId, obj] of Object.entries(pdx)) {
-                        const entry = obj && obj.entry ? String(obj.entry) : "";
-                        if (!entry) continue;
-                        if (entry.toLowerCase().includes(q)) {
-                            relevancy++;
-                            const textKey = entry.trim().replace(/\s+/g, " "); // normalise
-                            const g = gameById[gameId];
-                            const dateMs = g && g.releaseDate ? Date.parse(g.releaseDate) : Number.POSITIVE_INFINITY;
-                            if (!dexMatchesByText.has(textKey)) {
-                                dexMatchesByText.set(textKey, { gameId, entry, dateMs });
-                            } else {
-                                // keep the oldest (smallest dateMs)
-                                const cur = dexMatchesByText.get(textKey);
-                                if (dateMs < cur.dateMs) {
-                                    dexMatchesByText.set(textKey, { gameId, entry, dateMs });
-                                }
-                            }
-                        }
-                    }
-
-                    if (relevancy > 0) {
-                        hits.push({
-                            p,
-                            relevancy,
-                            fieldMatches,
-                            dexMatches: Array.from(dexMatchesByText.values()).sort((a, b) => a.dateMs - b.dateMs)
-                        });
-                    }
+                if (!qRaw.trim()) {
+                    summary.textContent = "Enter a word or phrase to begin.";
+                    return;
                 }
-
-                // Sort hits: relevancy desc, then by ID (numeric + suffix)
-                hits.sort((A, B) => {
-                    if (B.relevancy !== A.relevancy) return B.relevancy - A.relevancy;
-                    return idComparator(A.p, B.p);
-                });
-
-                summary.textContent = `${hits.length} Pokémon matched for “${qRaw}”. Results sorted by relevancy, then ID.`;
-
-                for (const h of hits) {
-                    const { p, fieldMatches, dexMatches } = h;
-
-                    const card = document.createElement("div");
-                    card.className = "result";
-                    setTypeData(card, p);
-
-                    const header = document.createElement("div");
-                    header.className = "result-header";
-
-                    // --- Clickable image (uses same 'link-btn' styling) ---
-                    const imgBtn = document.createElement("button");
-                    imgBtn.className = "link-btn";
-                    imgBtn.style.padding = "0";
-                    imgBtn.style.background = "transparent";
-                    imgBtn.style.border = "0";
-                    imgBtn.style.color = "inherit";
-                    imgBtn.style.cursor = "pointer";
-                    imgBtn.setAttribute("aria-label", `Open ${p.name || "Pokémon"} entry`);
-
-                    const img = document.createElement("div");
-                    img.className = "result-img";
-                    lazyBg(img, PKMN_IMG(p.id));
-                    imgBtn.appendChild(img);
-
-                    imgBtn.addEventListener("click", () => openPokemonOverlay(p));
-
-                    const title = document.createElement("div");
-
-                    // --- First line: clickable name + optional form (same 'link-btn' styling) ---
-                    const row1 = document.createElement("div");
-                    const nameBtn = document.createElement("button");
-                    nameBtn.className = "link-btn";
-                    nameBtn.style.padding = "0";
-                    nameBtn.style.background = "transparent";
-                    nameBtn.style.border = "0";
-                    nameBtn.style.color = "inherit";
-                    nameBtn.style.cursor = "pointer";
-                    nameBtn.innerHTML = `<strong>${highlightHTML(p.name || "(Unnamed)", qRaw)}</strong>`;
-                    nameBtn.setAttribute("aria-label", `Open ${p.name || "Pokémon"} entry`);
-                    nameBtn.addEventListener("click", () => openPokemonOverlay(p));
-                    row1.appendChild(nameBtn);
-
-                    if (p.form) {
-                        const sep = document.createElement("span");
-                        sep.textContent = " ";
-                        const form = document.createElement("span");
-                        form.className = "muted";
-                        form.innerHTML = highlightHTML(`• ${p.form}`, qRaw);
-                        row1.appendChild(sep);
-                        row1.appendChild(form);
-                    }
-                    title.appendChild(row1);
-
-                    // --- Second line: id/types ---
-                    const row2 = document.createElement("div");
-                    row2.className = "muted";
-                    const idTypes = `#${p.id} • ${[p.type1, p.type2].filter(Boolean).join(" / ") || "—"}`;
-                    row2.innerHTML = highlightHTML(idTypes, qRaw);
-                    title.appendChild(row2);
-
-                    const score = document.createElement("div");
-                    score.innerHTML = `<span class="pill">Relevancy: ${h.relevancy}</span>`;
-
-                    header.appendChild(imgBtn);
-                    header.appendChild(title);
-                    header.appendChild(score);
-                    card.appendChild(header);
-
-                    if (fieldMatches.length) {
-                        const fieldsBox = document.createElement("div");
-                        fieldsBox.innerHTML = `<div class="section-title">Fields</div>`;
-                        const list = document.createElement("div");
-                        list.className = "fields";
-                        for (const m of fieldMatches) {
-                            const label = m.label.replace(/^./, c => c.toUpperCase());
-                            const div = document.createElement("div");
-                            div.innerHTML = `<span class="muted">${safeHtml(label)}:</span> ${highlightHTML(m.value, qRaw)}`;
-                            list.appendChild(div);
-                        }
-                        fieldsBox.appendChild(list);
-                        card.appendChild(fieldsBox);
-                    }
-
-                    if (dexMatches.length) {
-                        const dexBox = document.createElement("div");
-                        dexBox.innerHTML = `<div class="section-title">Pokédex entries (oldest unique matches)</div>`;
-                        const list = document.createElement("div");
-                        list.className = "dex";
-                        for (const dm of dexMatches) {
-                            const g = DATA.games.find(x => x.id === dm.gameId);
-                            const gTitle = g ? g.title : dm.gameId;
-                            const date = (g && g.releaseDate) ? new Date(g.releaseDate).toISOString().slice(0, 10) : "—";
-                            const item = document.createElement("div");
-                            item.className = "dex-entry";
-                            const gameColor = g && /^#[0-9a-f]{6}$/i.test(g.colorHex) ? g.colorHex.toUpperCase() : "#888888";
-                            item.setAttribute("style", `--dex_color:${gameColor}`);
-                            item.innerHTML = `<div class="muted">${safeHtml(gTitle)} • ${safeHtml(date)}</div><div>${highlightHTML(dm.entry, qRaw)}</div>`;
-                            list.appendChild(item);
-                        }
-                        dexBox.appendChild(list);
-                        card.appendChild(dexBox);
-                    }
-
-                    results.appendChild(card);
-                }
-
-
-
-
-                // ===== Game Corpus matches (after Pokémon hits) =====
-                const qLower = q;
-                const gamesWithCorpus = DATA.games.filter(g => (g.corpusSlug || "").trim());
-                let totalGameMatches = 0;
-
-                for (const g of gamesWithCorpus) {
-                    const { lines } = await loadCorpus(g.corpusSlug);
-                    if (!lines.length) continue;
-
-                    // collect matching lines (case-insensitive)
-                    const matches = [];
-                    const MAX_LINES_PER_GAME = 50; // safety cap to avoid massive cards
-                    for (let i = 0; i < lines.length; i++) {
-                        const line = lines[i];
-                        if (!line) continue;
-                        if (line.toLowerCase().includes(qLower)) {
-                            matches.push({ idx: i + 1, text: line });
-                            if (matches.length >= MAX_LINES_PER_GAME) break;
-                        }
-                    }
-                    if (!matches.length) continue;
-                    totalGameMatches += matches.length;
-
-                    // Build a game result card
-                    const card = document.createElement("div");
-                    card.className = "result";
-
-                    const header = document.createElement("div");
-                    header.className = "result-header";
-
-                    // game image
-                    const img = document.createElement("div");
-                    img.className = "result-img";
-                    if (g.imageSlug) lazyBg(img, GAME_IMG(g.imageSlug));
-                    img.style.cursor = "pointer";
-                    img.setAttribute("aria-label", `Open corpus for ${g.title || "Game"}`);
-                    img.addEventListener("click", () => openCorpusOverlayForGame(g));
-
-                    // title + meta
-                    const title = document.createElement("div");
-                    const row1 = document.createElement("div");
-
-                    // Clickable title that opens the corpus overlay
-                    const titleBtn = document.createElement("button");
-                    titleBtn.type = "button";
-                    titleBtn.className = "link-btn"; // style to look like a link (CSS below)
-                    titleBtn.textContent = g.title || "(Game)";
-                    titleBtn.setAttribute("aria-label", `View corpus for ${g.title || "Game"}`);
-                    titleBtn.addEventListener("click", (e) => {
-                        e.preventDefault();
-                        openCorpusOverlayForGame(g);
-                    });
-
-                    const titleStrong = document.createElement("strong");
-                    titleStrong.appendChild(titleBtn);
-                    row1.appendChild(titleStrong);
-                    const row2 = document.createElement("div");
-                    row2.className = "muted";
-                    const date = g.releaseDate ? new Date(g.releaseDate).toISOString().slice(0, 10) : "—";
-                    row2.innerHTML = `${safeHtml(g.console || "—")} • ${safeHtml(date)}`;
-                    title.appendChild(row1);
-                    title.appendChild(row2);
-
-                    header.appendChild(img);
-                    header.appendChild(title);
-
-                    // Score/pill like Pokémon results (optional)
-                    const score = document.createElement("div");
-                    score.innerHTML = `<span class="pill">${matches.length} line${matches.length === 1 ? "" : "s"}</span>`;
-                    header.appendChild(score);
-
-                    card.appendChild(header);
-
-                    // Lines
-                    const linesBox = document.createElement("div");
-                    linesBox.innerHTML = `<div class="section-title">Corpus lines</div>`;
-                    const list = document.createElement("div");
-                    for (const m of matches) {
-                        const p = document.createElement("p");
-                        p.className = "corpus_line";
-                        // highlight query (uses your existing helper)
-                        p.innerHTML = `${m.idx} : ${highlightHTML(m.text, qRaw)}`;
-                        list.appendChild(p);
-                    }
-                    linesBox.appendChild(list);
-                    card.appendChild(linesBox);
-
-                    results.appendChild(card);
-                }
-
-                // update summary to mention game corpus hits (optional)
-                if (totalGameMatches > 0) {
-                    summary.textContent = `${hits.length} Pokémon matched for “${qRaw}” • ${totalGameMatches} corpus line${totalGameMatches === 1 ? "" : "s"} in games.`;
-                }
+                // let the shared renderer fill 'results'
+                await renderSearchResultsInto({ query: qRaw, mountEl: results });
+                // optional summary (you can omit or compute counts inside the helper if you prefer)
+                summary.textContent = `Results for “${qRaw}”.`;
             }
 
             btn.addEventListener("click", doSearch);

@@ -114,6 +114,9 @@
 [data-type1="stellar"]   { --type1: var(--type-stellar); }
 [data-type2="stellar"]   { --type2: var(--type-stellar); }
 
+[data-type1="dex"]   { --type1: var(--dex_color); }
+[data-type2="dex"]   { --type2: var(--dex_color); }
+
 
 html,
 body {
@@ -666,6 +669,15 @@ select::after {
 }
 
 
+/* Highlight the currently jumped-to line */
+.corpus_line {
+  padding: 0.5em 1em;
+  margin: 0;
+}
+.corpus_line.line-highlight {
+  outline: 2px solid var(--seasonal-line);
+  background: var(--seasonal-bg);
+}
 
 
 
