@@ -1,0 +1,33 @@
+{
+  "textHtml": "asdasd",
+  "items": [
+    {
+      "id": "6177d749-d2b2-4bff-a705-63c2d945e375",
+      "kind": "corpus",
+      "gameId": "ruby",
+      "gameTitle": "Ruby",
+      "gameConsole": "Game Boy Advance",
+      "releaseDate": "2003-03-19",
+      "gameColorHex": "#9E3A29",
+      "corpusSlug": "ruby-sapphire-en_msg",
+      "lineNumber": 5003,
+      "lineText": "VENUSAUR"
+    },
+    {
+      "id": "f1a035f0-4c12-4126-b830-fefe22796611",
+      "kind": "dex",
+      "pId": "3",
+      "pName": "Venusaur",
+      "pForm": "",
+      "pType1": "Grass",
+      "pType2": "Poison",
+      "gameId": "ruby",
+      "gameTitle": "Ruby",
+      "gameConsole": "Game Boy Advance",
+      "releaseDate": "2003-03-19",
+      "gameColorHex": "#9E3A29",
+      "regionalDexNumber": "",
+      "entry": "There is a large flower on VENUSAUR’s back. The flower is said to take on vivid colors if it gets plenty of nutrition and sunlight. The flower’s aroma soothes the emotions of people."
+    }
+  ]
+}
