@@ -95710,7 +95710,7 @@
       }
     },
     {
-      "id": "999R",
+      "id": "999-r",
       "name": "Gimmighoul",
       "category": "Coin Chest Pokémon",
       "form": "Roaming",
@@ -95732,6 +95732,162 @@
         "violet": {
           "regionalDexNumber": "391",
           "entry": "It lives inside an old treasure chest. Sometimes it gets left in shop corners since no one realizes it’s actually a Pokémon."
+        },
+        "red": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "blue": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "yellow": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "gold": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "silver": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "crystal": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "ruby": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "sapphire": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "firered": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "leafgreen": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "emerald": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "diamond": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "pearl": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "platinum": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "heartgold": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "soulsilver": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "black": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "white": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "black-2": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "white-2": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "x": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "y": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "omega-ruby": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "alpha-sapphire": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "sun": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "moon": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "ultra-sun": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "ultra-moon": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "lets-go-pikachu": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "lets-go-eevee": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "sword": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "shield": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "the-isle-of-armor": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "the-crown-tundra": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "brilliant-diamond": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "shining-pearl": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "legends-arceus": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "the-teal-mask": {
+          "regionalDexNumber": "",
+          "entry": ""
+        },
+        "the-indigo-disk": {
+          "regionalDexNumber": "",
+          "entry": ""
         }
       }
     },
