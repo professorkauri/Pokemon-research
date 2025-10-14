@@ -1,33 +1,110 @@
-{
-  "textHtml": "asdasd",
-  "items": [
-    {
-      "id": "6177d749-d2b2-4bff-a705-63c2d945e375",
-      "kind": "corpus",
-      "gameId": "ruby",
-      "gameTitle": "Ruby",
-      "gameConsole": "Game Boy Advance",
-      "releaseDate": "2003-03-19",
-      "gameColorHex": "#9E3A29",
-      "corpusSlug": "ruby-sapphire-en_msg",
-      "lineNumber": 5003,
-      "lineText": "VENUSAUR"
-    },
-    {
-      "id": "f1a035f0-4c12-4126-b830-fefe22796611",
-      "kind": "dex",
-      "pId": "3",
-      "pName": "Venusaur",
-      "pForm": "",
-      "pType1": "Grass",
-      "pType2": "Poison",
-      "gameId": "ruby",
-      "gameTitle": "Ruby",
-      "gameConsole": "Game Boy Advance",
-      "releaseDate": "2003-03-19",
-      "gameColorHex": "#9E3A29",
-      "regionalDexNumber": "",
-      "entry": "There is a large flower on VENUSAUR’s back. The flower is said to take on vivid colors if it gets plenty of nutrition and sunlight. The flower’s aroma soothes the emotions of people."
-    }
-  ]
-}
+[
+  {
+    "id": "note:bse1d18mk5tmgpud3oj",
+    "kind": "note",
+    "text": "This is a test...\nCan I put lots of lines into here?\nOh, it scrolls...\nWonderful...\nOh very good. this will work well.",
+    "title": "Here's my impressive note title..."
+  },
+  {
+    "id": "dex:1",
+    "kind": "dex",
+    "pId": "1",
+    "pName": "Bulbasaur",
+    "pForm": "",
+    "pType1": "Grass",
+    "pType2": "Poison",
+    "entries": [
+      {
+        "id": "a8fwghlatlrmgpudc98",
+        "gameId": "yellow",
+        "gameTitle": "Yellow",
+        "gameColorHex": "#DEBF43",
+        "entryText": "It can go for days without eating a single morsel. In the bulb on its back, it stores energy.",
+        "regionalDexNumber": "1"
+      },
+      {
+        "id": "jrxid8z7ezmgpudnuj",
+        "gameId": "omega-ruby",
+        "gameTitle": "Omega Ruby",
+        "gameColorHex": "#DA6B3A",
+        "entryText": "Bulbasaur can be seen napping in bright sunlight. There is a seed on its back. By soaking up the sun’s rays, the seed grows progressively larger.",
+        "regionalDexNumber": ""
+      }
+    ]
+  },
+  {
+    "id": "dex:179",
+    "kind": "dex",
+    "pId": "179",
+    "pName": "Mareep",
+    "pForm": "",
+    "pType1": "Electric",
+    "pType2": "",
+    "entries": [
+      {
+        "id": "3946cuhs1usmgpudvf3",
+        "gameId": "ruby",
+        "gameTitle": "Ruby",
+        "gameColorHex": "#9E3A29",
+        "entryText": "MAREEP’s fluffy coat of wool rubs together and builds a static charge. The more static electricity is charged, the more brightly the lightbulb at the tip of its tail grows.",
+        "regionalDexNumber": ""
+      }
+    ]
+  },
+  {
+    "id": "corpus:ruby",
+    "kind": "corpus",
+    "gameId": "ruby",
+    "gameTitle": "Ruby",
+    "gameColorHex": "#9E3A29",
+    "corpusSlug": "ruby-sapphire-en_msg",
+    "lines": [
+      {
+        "id": "diqfvbrzou8mgpudy91",
+        "lineNumber": 7443,
+        "lineText": "VOLBEAT's tail glows like a lightbulb. With other VOLBEAT, it uses its tail to draw geometric shapes in the night sky."
+      }
+    ]
+  },
+  {
+    "id": "note:fuhtdjwqgt6mgpue7ws",
+    "kind": "note",
+    "text": "Here's a new text box added."
+  },
+  {
+    "id": "corpus:emerald",
+    "kind": "corpus",
+    "gameId": "emerald",
+    "gameTitle": "Emerald",
+    "gameColorHex": "#61A84D",
+    "corpusSlug": "emerald-en_msg",
+    "lines": [
+      {
+        "id": "jliigtpcsamgpudz37",
+        "lineNumber": 10358,
+        "lineText": "Its fluffy wool rubs together and builds a static charge. The more energy is charged, the more brightly the lightbulb at the tip of its tail glows."
+      },
+      {
+        "id": "oc1bkza3gimgpudzg3",
+        "lineNumber": 11697,
+        "lineText": "BULBY"
+      }
+    ]
+  },
+  {
+    "id": "note:fjzf4nxr0ufmgpuk9oj",
+    "kind": "note",
+    "text": ""
+  },
+  {
+    "id": "note:6pvc7qcn2ykmgpukajt",
+    "kind": "note",
+    "text": ""
+  },
+  {
+    "id": "note:4sf2wkoz11mmgpur2no",
+    "kind": "note",
+    "title": "Here's another note...",
+    "text": ""
+  }
+]
