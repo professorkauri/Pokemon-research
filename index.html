@@ -205,6 +205,41 @@
         }
 
 
+        // === Double-confirm helper for dangerous actions ===
+        function wireAreYouSure(btn, {
+            idleLabel,
+            armedLabel = "Are you sure?",
+            timeoutMs = 2000,
+            onConfirm
+        }) {
+            if (!btn) return;
+
+            let armed = false;
+            let timer = null;
+
+            function reset() {
+                armed = false;
+                btn.classList.remove("danger");
+                btn.textContent = idleLabel;
+                if (timer) { clearTimeout(timer); timer = null; }
+            }
+
+            btn.textContent = idleLabel;
+            btn.onclick = () => {
+                if (!armed) {
+                    armed = true;
+                    btn.classList.add("danger");
+                    btn.textContent = armedLabel;
+                    timer = setTimeout(reset, timeoutMs);
+                    return;
+                }
+                reset();
+                onConfirm?.();
+            };
+
+            // Allow live relabelling without re-wiring
+            return { reset, relabel: (newIdle) => { idleLabel = newIdle; reset(); } };
+        }
 
 
 
@@ -546,11 +581,13 @@
 
         function pruneEmptyGroups() {
             const list = loadNotepad().filter(g =>
-                (g.kind === "dex" && g.entries?.length) ||
-                (g.kind === "corpus" && g.lines?.length)
+                g.kind === "note" ||                              // ✅ keep all notes
+                (g.kind === "dex" && (g.entries?.length || 0) > 0) ||
+                (g.kind === "corpus" && (g.lines?.length || 0) > 0)
             );
             saveNotepad(list);
         }
+
 
         function renderNotepadNoteCard(group) {
             // group.kind === 'note'
@@ -2193,8 +2230,8 @@
             updateDatasetSummary(); renderAdminView(); renderMain();
         });
 
-        deleteBtn.addEventListener("click", () => {
-            if (!confirm("Delete this item? This cannot be undone.")) return;
+        // Centralised delete action
+        function performDeletion() {
             if (adminActiveView === "pokemon") {
                 const idx = DATA.pokemon.findIndex(p => (p.id || p._tempId) === selectedId);
                 if (idx >= 0) DATA.pokemon.splice(idx, 1);
@@ -2202,8 +2239,36 @@
                 const idx = DATA.games.findIndex(g => g.id === selectedId);
                 if (idx >= 0) DATA.games.splice(idx, 1);
             }
-            selectedId = null; updateDatasetSummary(); renderAdminView(); renderMain();
-        });
+            selectedId = null;
+            updateDatasetSummary();
+            renderAdminView();
+            renderMain();
+        }
+
+        // Keep a reference to the current wiring so we can relabel without re-adding listeners
+        let _deleteBtnWiring = null;
+
+        // Shows/hides + (re)labels the delete button and (re)wires the double-confirm
+        function updateDeleteBtn() {
+            const show = !!selectedId;
+            const label = adminActiveView === "pokemon" ? "Delete Pokémon" : "Delete Game";
+
+            deleteBtn.classList.remove("hidden");
+            deleteBtn.style.display = show ? "inline-block" : "none";
+
+            if (!_deleteBtnWiring) {
+                _deleteBtnWiring = wireAreYouSure(deleteBtn, {
+                    idleLabel: label,
+                    armedLabel: "Are you sure?",
+                    timeoutMs: 2200,
+                    onConfirm: performDeletion
+                });
+            } else {
+                // Just relabel (keeps the same onConfirm + timing)
+                _deleteBtnWiring.relabel(label);
+            }
+        }
+
 
         function renderAdminView() {
             rightTitle.textContent = "No item selected";
@@ -2218,6 +2283,8 @@
             sortBtn.textContent = (adminActiveView === "pokemon")
                 ? (pokemonSortMode === "AZ" ? "A–Z" : "0–9")
                 : (gameSortMode === "AZ" ? "A–Z" : "Date");
+
+            updateDeleteBtn();
 
             refreshLeftList();
             renderAdminRight();
@@ -2357,6 +2424,8 @@
                 body.innerHTML = `<div class="muted">Select or add an item to edit its details.</div>`;
                 return;
             }
+
+            updateDeleteBtn();
 
             if (adminActiveView === "pokemon") {
                 const p = DATA.pokemon.find(x => (x.id || x._tempId) === selectedId);

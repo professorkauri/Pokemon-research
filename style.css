@@ -25,43 +25,25 @@ VARIABLES
   --font-fam-mono: 'Courier New', Courier, monospace;
 
   --type-normal: #e0e0c8;
-  --type-normal-d: #818159;
   --type-fire: #ffac59;
-  --type-fire-d: #a65300;
   --type-water: #74acf5;
-  --type-water-d: #1b539b;
   --type-electric: #ffe673;
-  --type-electric-d: #a78900;
   --type-grass: #81d580;
-  --type-grass-d: #306c2f;
   --type-flying: #add2f5;
-  --type-flying-d: #54789b;
   --type-poison: #b884dd;
-  --type-poison-d: #5e2a84;
   --type-ground: #b88e6f;
-  --type-ground-d: #5e3515;
   --type-psychic: #f584a8;
-  --type-psychic-d: #9b2a4f;
   --type-bug: #c2d21e;
-  --type-bug-d: #606b00;
   --type-rock: #d8bc86;
-  --type-rock-d: #6b5630;
   --type-ghost: #9e84d9;
-  --type-ghost-d: #4f2b82;
   --type-dragon: #8573f5;
-  --type-dragon-d: #2e2174;
+  --type-fighting: #FF8000;
   --type-dark: #a89f9f;
-  --type-dark-d: #403030;
   --type-steel: #a8a8c0;
-  --type-steel-d: #50505a;
   --type-fairy: #f1a8f1;
-  --type-fairy-d: #7b3b7b;
   --type-ice: #a8e5e5;
-  --type-ice-d: #307070;
   --type-unknown: #68a090;
-  --type-unknown-d: #44685e;
   --type-stellar: #ffd65c;
-  --type-stellar-d: #9b6a00;
 }
 
 /* =====================================================
