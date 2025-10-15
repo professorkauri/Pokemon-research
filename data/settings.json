@@ -1,0 +1,48 @@
+{
+  "app": {
+    "name": "Travis Dex",
+    "version": "0.1.0"
+  },
+  "routes": {
+    "/home": "home",
+    "/admin": "admin",
+    "/pokemon": "pokemon-browse",
+    "/pokemon/:id": "pokemon-detail",
+    "/games": "games",
+    "/games/:id": "game-detail"
+  },
+  "ui": {
+    "theme": "system",
+    "dynamicCss": {
+      "enabled": true,
+      "pattern": "styles/pages/{slug}.css"
+    },
+    "overlays": {
+      "notepad": true
+    }
+  },
+  "assets": {
+    "imageBase": "assets/images",
+    "corpusBase": "assets/corpus"
+  },
+  "modules": {
+    "card": {
+      "css": "styles/modules/card.css"
+    },
+    "dexGrid": {
+      "css": "styles/modules/dex-grid.css"
+    },
+    "results": {
+      "css": "styles/modules/results.css"
+    },
+    "dexEntry": {
+      "css": "styles/modules/dex-entry.css"
+    }
+  },
+  "features": {
+    "tabs": true,
+    "dexGrid": true,
+    "results": true,
+    "debug": false
+  }
+}

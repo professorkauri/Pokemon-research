@@ -1,0 +1,73 @@
+/ (root)
+├─ index.html
+│
+├─ data/
+│  ├─ settings.json          # config, version, feature flags
+│  ├─ pokemon.json           # Pokémon + forms
+│  ├─ games.json             # Game metadata
+│  └─ corpus/                # plain-text corpora (loaded on demand)
+│     ├─ red.txt
+│     ├─ blue.txt
+│     ├─ yellow.txt
+│     ├─ scarlet.txt
+│     └─ violet.txt
+│
+├─ assets/
+│  ├─ images/
+│  │  ├─ pkmn/               # Pokémon images (e.g., 001.png, 006-gm.png)
+│  │  └─ games/              # Game icons/covers
+│  ├─ fonts/
+│  └─ icons/
+│
+├─ styles/
+│  ├─ base.css               # global tokens, layout, typography, utilities
+│  ├─ modules/               # reusable component styles
+│  │  ├─ card.css
+│  │  ├─ dex-grid.css
+│  │  ├─ results.css
+│  │  └─ dex-entry.css
+│  └─ pages/                 # route-specific/layout styles
+│     ├─ home.css
+│     ├─ admin.css
+│     ├─ pokemon-browse.css
+│     ├─ pokemon-detail.css
+│     ├─ games.css
+│     └─ game-detail.css
+│
+├─ src/
+│  ├─ main.js                # app bootstrapping (entry)
+│  ├─ router.js              # hash routes (#/home, #/pokemon, etc.)
+│  │
+│  ├─ state/                 # data loading, caching, persistence
+│  │  ├─ data-store.js       # settings/pokemon/games loaders + indexes
+│  │  ├─ corpus-loader.js    # fetches & parses /data/corpus/*.txt
+│  │  └─ notepad-store.js    # notepad persistence (overlay)
+│  │
+│  ├─ utils/                 # shared helpers (no UI)
+│  │  ├─ css.js              # dynamic sidecar CSS loader
+│  │  ├─ dom.js
+│  │  ├─ images.js
+│  │  ├─ types.js
+│  │  ├─ search.js
+│  │  └─ slug.js
+│  │
+│  ├─ modules/               # reusable UI components
+│  │  ├─ Card.js
+│  │  ├─ DexGrid.js
+│  │  ├─ Results.js
+│  │  └─ DexEntry.js
+│  │
+│  ├─ overlays/
+│  │  └─ NotepadOverlay.js   # the one overlay we keep
+│  │
+│  └─ pages/                 # route controllers/views
+│     ├─ HomePage.js         # #/home
+│     ├─ AdminPage.js        # #/admin
+│     ├─ PokemonBrowsePage.js# #/pokemon
+│     ├─ PokemonDetailPage.js# #/pokemon/:id   (e.g., 3-gm)
+│     ├─ GamesPage.js        # #/games
+│     └─ GameDetailPage.js   # #/games/:id (tabs: regional | corpus)
+│
+└─ media/                    # (optional future) audio/video/maps
+   ├─ audio/
+   └─ video/

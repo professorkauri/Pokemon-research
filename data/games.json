@@ -1,0 +1,371 @@
+[
+  {
+    "id": "red",
+    "title": "Red",
+    "releaseDate": "1998-09-28",
+    "console": "Game Boy",
+    "colorHex": "#A92823",
+    "imageSlug": "red",
+    "corpusSlug": ""
+  },
+  {
+    "id": "blue",
+    "title": "Blue",
+    "releaseDate": "1998-09-28",
+    "console": "Game Boy",
+    "colorHex": "#285A98",
+    "imageSlug": "blue",
+    "corpusSlug": ""
+  },
+  {
+    "id": "yellow",
+    "title": "Yellow",
+    "releaseDate": "1999-10-18",
+    "console": "Game Boy",
+    "colorHex": "#DEBF43",
+    "imageSlug": "yellow",
+    "corpusSlug": ""
+  },
+  {
+    "id": "gold",
+    "title": "Gold",
+    "releaseDate": "2000-10-15",
+    "console": "Game Boy Color",
+    "colorHex": "#9B9061",
+    "imageSlug": "gold",
+    "corpusSlug": ""
+  },
+  {
+    "id": "silver",
+    "title": "Silver",
+    "releaseDate": "2001-04-06",
+    "console": "Game Boy Color",
+    "colorHex": "#8B919B",
+    "imageSlug": "silver",
+    "corpusSlug": ""
+  },
+  {
+    "id": "crystal",
+    "title": "Crystal",
+    "releaseDate": "2001-07-29",
+    "console": "Game Boy Color",
+    "colorHex": "#6E75AE",
+    "imageSlug": "crystal",
+    "corpusSlug": ""
+  },
+  {
+    "id": "ruby",
+    "title": "Ruby",
+    "releaseDate": "2003-03-19",
+    "console": "Game Boy Advance",
+    "colorHex": "#9E3A29",
+    "imageSlug": "ruby",
+    "corpusSlug": "ruby-sapphire-en_msg"
+  },
+  {
+    "id": "sapphire",
+    "title": "Sapphire",
+    "releaseDate": "2003-03-19",
+    "console": "Game Boy Advance",
+    "colorHex": "#223F6E",
+    "imageSlug": "sapphire",
+    "corpusSlug": ""
+  },
+  {
+    "id": "emerald",
+    "title": "Emerald",
+    "releaseDate": "2005-05-01",
+    "console": "Game Boy Advance",
+    "colorHex": "#61A84D",
+    "imageSlug": "emerald",
+    "corpusSlug": "emerald-en_msg"
+  },
+  {
+    "id": "firered",
+    "title": "Firered",
+    "releaseDate": "2004-09-09",
+    "console": "Game Boy Advance",
+    "colorHex": "#DC612F",
+    "imageSlug": "fire-red",
+    "corpusSlug": "f-red-l-green-en_msg"
+  },
+  {
+    "id": "leafgreen",
+    "title": "Leafgreen",
+    "releaseDate": "2004-09-23",
+    "console": "Game Boy Advance",
+    "colorHex": "#A0B639",
+    "imageSlug": "leaf-green",
+    "corpusSlug": ""
+  },
+  {
+    "id": "diamond",
+    "title": "Diamond",
+    "releaseDate": "2007-04-22",
+    "console": "Nintendo DS",
+    "colorHex": "#25597A",
+    "imageSlug": "diamond",
+    "corpusSlug": "diamond-pearl-en_msg"
+  },
+  {
+    "id": "pearl",
+    "title": "Pearl",
+    "releaseDate": "2007-04-22",
+    "console": "Nintendo DS",
+    "colorHex": "#8C5157",
+    "imageSlug": "pearl",
+    "corpusSlug": ""
+  },
+  {
+    "id": "platinum",
+    "title": "Platinum",
+    "releaseDate": "2009-03-22",
+    "console": "Nintendo DS",
+    "colorHex": "#373C4F",
+    "imageSlug": "platinum",
+    "corpusSlug": "platinum-en_msg"
+  },
+  {
+    "id": "heartgold",
+    "title": "Heartgold",
+    "releaseDate": "2010-03-14",
+    "console": "Nintendo DS",
+    "colorHex": "#C3A14B",
+    "imageSlug": "heart-gold",
+    "corpusSlug": "h-gold-s-silver-en_msg"
+  },
+  {
+    "id": "soulsilver",
+    "title": "Soulsilver",
+    "releaseDate": "2010-03-14",
+    "console": "Nintendo DS",
+    "colorHex": "#B4B9BB",
+    "imageSlug": "soul-silver",
+    "corpusSlug": ""
+  },
+  {
+    "id": "black",
+    "title": "Black",
+    "releaseDate": "2011-03-06",
+    "console": "Nintendo DS",
+    "colorHex": "#222222",
+    "imageSlug": "black",
+    "corpusSlug": "blackwhite-en_script"
+  },
+  {
+    "id": "white",
+    "title": "White",
+    "releaseDate": "2011-03-06",
+    "console": "Nintendo DS",
+    "colorHex": "#E1E1E1",
+    "imageSlug": "white",
+    "corpusSlug": ""
+  },
+  {
+    "id": "black-2",
+    "title": "Black 2",
+    "releaseDate": "2012-10-11",
+    "console": "Nintendo DS",
+    "colorHex": "#75BDE0",
+    "imageSlug": "black-2",
+    "corpusSlug": "black2white2-en_script"
+  },
+  {
+    "id": "white-2",
+    "title": "White 2",
+    "releaseDate": "2012-10-11",
+    "console": "Nintendo DS",
+    "colorHex": "#F4C654",
+    "imageSlug": "white-2",
+    "corpusSlug": ""
+  },
+  {
+    "id": "x",
+    "title": "X",
+    "releaseDate": "2013-10-12",
+    "console": "Nintendo 3DS",
+    "colorHex": "#275D96",
+    "imageSlug": "x",
+    "corpusSlug": "x-y-en_script"
+  },
+  {
+    "id": "y",
+    "title": "Y",
+    "releaseDate": "2013-10-12",
+    "console": "Nintendo 3DS",
+    "colorHex": "#BA353A",
+    "imageSlug": "y",
+    "corpusSlug": ""
+  },
+  {
+    "id": "omega-ruby",
+    "title": "Omega Ruby",
+    "releaseDate": "2014-11-21",
+    "console": "Nintendo 3DS",
+    "colorHex": "#DA6B3A",
+    "imageSlug": "omega-ruby",
+    "corpusSlug": "o-ruby-a-sapphire-en_script"
+  },
+  {
+    "id": "alpha-sapphire",
+    "title": "Alpha Sapphire",
+    "releaseDate": "2014-11-21",
+    "console": "Nintendo 3DS",
+    "colorHex": "#5FC2D0",
+    "imageSlug": "alpha-sapphire",
+    "corpusSlug": ""
+  },
+  {
+    "id": "sun",
+    "title": "Sun",
+    "releaseDate": "2016-11-18",
+    "console": "Nintendo 3DS",
+    "colorHex": "#EEA240",
+    "imageSlug": "sun",
+    "corpusSlug": "sun-moon-en_script"
+  },
+  {
+    "id": "moon",
+    "title": "Moon",
+    "releaseDate": "2016-11-18",
+    "console": "Nintendo 3DS",
+    "colorHex": "#593486",
+    "imageSlug": "moon",
+    "corpusSlug": ""
+  },
+  {
+    "id": "ultra-sun",
+    "title": "Ultra Sun",
+    "releaseDate": "2017-11-17",
+    "console": "Nintendo 3DS",
+    "colorHex": "#E3A754",
+    "imageSlug": "ultra-sun",
+    "corpusSlug": "u-sun-u-moon-en_script"
+  },
+  {
+    "id": "ultra-moon",
+    "title": "Ultra Moon",
+    "releaseDate": "2017-11-17",
+    "console": "Nintendo 3DS",
+    "colorHex": "#4DA4DC",
+    "imageSlug": "ultra-moon",
+    "corpusSlug": ""
+  },
+  {
+    "id": "lets-go-pikachu",
+    "title": "Lets Go Pikachu",
+    "releaseDate": "2018-11-16",
+    "console": "Nintendo Switch",
+    "colorHex": "#EFD35E",
+    "imageSlug": "lets-go-pikachu",
+    "corpusSlug": "lg-pikachu-eevee-en_script"
+  },
+  {
+    "id": "lets-go-eevee",
+    "title": "Lets Go Eevee",
+    "releaseDate": "2018-11-16",
+    "console": "Nintendo Switch",
+    "colorHex": "#D3A167",
+    "imageSlug": "lets-go-eevee",
+    "corpusSlug": ""
+  },
+  {
+    "id": "sword",
+    "title": "Sword",
+    "releaseDate": "2019-11-15",
+    "console": "Nintendo Switch",
+    "colorHex": "#469DE1",
+    "imageSlug": "sword",
+    "corpusSlug": "sword-shield-en_script"
+  },
+  {
+    "id": "shield",
+    "title": "Shield",
+    "releaseDate": "2019-11-15",
+    "console": "Nintendo Switch",
+    "colorHex": "#D22D5B",
+    "imageSlug": "shield",
+    "corpusSlug": ""
+  },
+  {
+    "id": "the-isle-of-armor",
+    "title": "The Isle Of Armor",
+    "releaseDate": "2020-06-17",
+    "console": "",
+    "colorHex": "#EEC150",
+    "imageSlug": "isle-of-armor",
+    "corpusSlug": ""
+  },
+  {
+    "id": "the-crown-tundra",
+    "title": "The Crown Tundra",
+    "releaseDate": "2020-10-22",
+    "console": "",
+    "colorHex": "#469C8A",
+    "imageSlug": "crown-tundra",
+    "corpusSlug": ""
+  },
+  {
+    "id": "brilliant-diamond",
+    "title": "Brilliant Diamond",
+    "releaseDate": "2021-11-19",
+    "console": "Nintendo Switch",
+    "colorHex": "#4999C8",
+    "imageSlug": "brilliant-diamond",
+    "corpusSlug": "b-diamond-s-pearl-en_message"
+  },
+  {
+    "id": "shining-pearl",
+    "title": "Shining Pearl",
+    "releaseDate": "2021-11-19",
+    "console": "Nintendo Switch",
+    "colorHex": "#F3B8D7",
+    "imageSlug": "shining-pearl",
+    "corpusSlug": ""
+  },
+  {
+    "id": "legends-arceus",
+    "title": "Legends Arceus",
+    "releaseDate": "2022-01-28",
+    "console": "Nintendo Switch",
+    "colorHex": "#89C194",
+    "imageSlug": "legends-arceus",
+    "corpusSlug": "legends-arceus-en_script"
+  },
+  {
+    "id": "scarlet",
+    "title": "Scarlet",
+    "releaseDate": "2022-11-18",
+    "console": "Nintendo Switch",
+    "colorHex": "#992842",
+    "imageSlug": "scarlet",
+    "corpusSlug": "scarlet-violet-en_script"
+  },
+  {
+    "id": "violet",
+    "title": "Violet",
+    "releaseDate": "2022-11-18",
+    "console": "Nintendo Switch",
+    "colorHex": "#6C2A7E",
+    "imageSlug": "violet",
+    "corpusSlug": ""
+  },
+  {
+    "id": "the-teal-mask",
+    "title": "The Teal Mask",
+    "releaseDate": "2023-09-08",
+    "console": "",
+    "colorHex": "#56B0A6",
+    "imageSlug": "teal-mask",
+    "corpusSlug": ""
+  },
+  {
+    "id": "the-indigo-disk",
+    "title": "The Indigo Disk",
+    "releaseDate": "2024-11-15",
+    "console": "",
+    "colorHex": "#64B4CE",
+    "imageSlug": "indigo-disk",
+    "corpusSlug": ""
+  }
+]
