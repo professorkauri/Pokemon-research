@@ -1,4 +1,6 @@
 import { loadNotepad, saveNotepad, uid } from '../state/notepad-store.js';
+import { setTypeData } from '../utils/types.js';
+import { lazyBg, PKMN_IMG, GAME_IMG } from '../utils/images.js';
 
 // Public API so other modules can add items
 export function addDexToNotepad({ p, game, entryText, regionalDexNumber = '' }) {
@@ -22,6 +24,7 @@ export function addDexToNotepad({ p, game, entryText, regionalDexNumber = '' }) 
   if (!exists) {
     group.entries.push({
       id: uid(),
+      pId: pID,
       gameId: game?.id ?? '',
       gameTitle: game?.title ?? '(Game)',
       gameColorHex,
@@ -174,19 +177,42 @@ function renderNoteCard(group) {
   card.appendChild(box);
   return card;
 }
+
+function pillTypes(group) {
+  if (group.pType1 && group.pType2) {
+    return `<p class="pill pill-types">
+              <span data-type1="${group.pType1.toLowerCase()}">${group.pType1}</span>
+              <span data-type2="${group.pType2.toLowerCase()}">${group.pType2}</span>
+            </p>`;
+  } else if (group.pType1) {
+    return `<p class="pill pill-types">
+              <span data-type1="${group.pType1.toLowerCase()}">${group.pType1}</span>
+            </p>`;
+  }
+}
+
 function renderDexGroup(group) {
   const card = document.createElement('div');
   card.className = 'result';
+  setTypeData(card, group);
   card.dataset.id = group.id;
 
   const header = document.createElement('div');
   header.className = 'result-header';
-  const title = document.createElement('div');
-  title.innerHTML = `<strong>${escape(group.pName || '(Unnamed)')}</strong>${group.pForm ? ` <span class="muted">• ${escape(group.pForm)}</span>` : ''}<div class="muted">#${escape(group.pId || '')} • ${(group.pType1||'')}${group.pType2? ' / '+group.pType2 : ''}</div>`;
-  header.appendChild(title);
+  
+  const img = document.createElement('div');
+  img.className='result-img'; lazyBg(img, PKMN_IMG(group.pId));
+  header.appendChild(img);
+  
+  const headerinfo = document.createElement('div');
+  headerinfo.className = 'result-header-info';
+
+  headerinfo.innerHTML = `<p class="slim">${escape(group.pName || '(Unnamed)')}${group.pForm ? ` <span class="muted">• ${escape(group.pForm)}</span></p>` : ''} ${pillTypes(group)}`;
+  
+  header.appendChild(headerinfo);
+
   card.appendChild(header);
 
-  const box = document.createElement('div'); box.innerHTML = `<div class="section-title">Pokédex entries</div>`;
   const list = document.createElement('div'); list.className = 'dex';
   if (!group.entries?.length) {
     const empty = document.createElement('div'); empty.className='muted'; empty.textContent='No entries yet.'; list.appendChild(empty);
@@ -194,21 +220,28 @@ function renderDexGroup(group) {
     for (const e of group.entries) {
       const item = document.createElement('div'); item.className = 'dex-entry';
       item.setAttribute('style', `--dex-color:${e.gameColorHex || '#888888'}`);
-      const meta = document.createElement('div'); meta.className = 'muted'; meta.textContent = e.gameTitle || '(Game)';
+      
+      const headerRow = document.createElement('div');
+      headerRow.className = 'dex-entry-header';
+
+      const meta = document.createElement('span'); 
+      meta.textContent = e.gameTitle || '(Game)';
+      headerRow.append(meta);
+
       const body = document.createElement('div'); body.className='dex-entry-body';
       const txt = document.createElement('div'); txt.textContent = e.entryText || '—';
       const rm = button('−📓', ()=> removeChild(group.id, e.id));
       body.append(txt, rm);
-      item.append(meta, body);
+      item.append(headerRow, body);
       list.appendChild(item);
     }
   }
-  box.appendChild(list);
-  card.appendChild(box);
+  card.appendChild(list);
   return card;
 }
 function renderCorpusGroup(group) {
   const card = document.createElement('div'); card.className='result'; card.dataset.id = group.id;
+  card.style = `--dex-color:${group.gameColorHex};`;
   const header = document.createElement('div'); header.className='result-header';
   const title = document.createElement('div'); title.innerHTML = `<strong>${escape(group.gameTitle || '(Game)')}</strong><div class="muted">Corpus</div>`;
   header.appendChild(title); card.appendChild(header);

@@ -1,0 +1,52 @@
+
+/************************************************************************************************************************************
+CARD MAIN
+************************************************************************************************************************************/
+
+.card {
+  border: 1px solid var(--g-bar);
+  border-radius: var(--border-rad-nml);
+  background: var(--g-panel);
+  box-shadow: var(--shadow);
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+  background-color: color-mix(in srgb, var(--dex-color) 6%, var(--g-panel));
+  background-image: var(--ctg);
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: var(--shadow_hover);
+}
+
+/* Tint Game cards using their --dex-color */
+.grid .card[style*="--dex-color"] {
+  box-shadow: var(--shadow);
+}
+.grid .card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow_hover);
+}
+.card .column {
+  gap:2px;
+  line-height:1em;
+}
+.card .column .muted {
+  font-size:var(--font-sml);
+}
+.card strong {
+  font-size:var(--font-lrg);
+}
+.grid.pokemon .card:hover strong {
+  color: var(--type1);
+}
+.grid:not(.pokemon) .card strong {
+  display:block;
+  width:100%;
+  text-align:center;
+}
+.grid:not(.pokemon) .card:hover strong {
+  color: var(--dex-color);
+}
+

@@ -11,32 +11,26 @@ export function DexEntry({ gameId, gameTitle, entryText, regionalDexNumber, colo
   box.style.setProperty('--dex-color', token(colorHex));
 
   const headerRow = document.createElement('div');
-  headerRow.className = 'dex-entry-header row-between';
-
-  const left = document.createElement('div');
-  left.className = 'dex-entry-heading';
-  left.innerHTML = `
-    <span class="game-pill" style="background:${token(colorHex)}">${escape(gameTitle || '(Game)')}</span>
+  headerRow.className = 'dex-entry-header';
+  headerRow.innerHTML = `
+    <span class="">${escape(gameTitle || '(Game)')}</span>
     ${regionalDexNumber ? `<span class="pill muted">#${escape(regionalDexNumber)}</span>` : ''}
   `;
 
   const actions = document.createElement('div');
   actions.className = 'actions';
-  const btnCopy = tiny('Copy', () => copy(entryText || ''));
-  const btnNP = tiny('Add to Notepad', () => {
+  const btnNP = tiny('+📓', () => {
     if (pokemon && game) {
       addDexToNotepad({ p: pokemon, game, entryText, regionalDexNumber: regionalDexNumber || '' });
     }
   });
-  actions.append(btnCopy, btnNP);
-
-  headerRow.append(left, actions);
+  actions.append(btnNP);
 
   const body = document.createElement('div');
   body.className = 'dex-entry-body';
-  body.innerHTML = entryText ? highlightHTMLMulti(entryText, terms) : '<span class="muted">—</span>';
+  body.innerHTML = entryText ? `<div>${highlightHTMLMulti(entryText, terms)}</div>` : '<span class="muted">—</span>';
 
-  box.append(headerRow, body);
+  box.append(headerRow, body, actions);
   return box;
 }
 

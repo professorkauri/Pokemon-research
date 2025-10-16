@@ -1,0 +1,19 @@
+
+
+
+.search-wrap {
+  display: grid;
+  gap: 12px;
+  max-width: 900px;
+  margin-inline: auto;
+}
+
+.search-bar {
+  display: flex;
+  gap: 8px;
+}
+
+.search-bar input[type="text"] {
+  flex: 1;
+  background: var(--g-panel);
+}

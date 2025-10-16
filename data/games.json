@@ -82,7 +82,7 @@
   },
   {
     "id": "firered",
-    "title": "Firered",
+    "title": "Fire Red",
     "releaseDate": "2004-09-09",
     "console": "Game Boy Advance",
     "colorHex": "#DC612F",
@@ -91,7 +91,7 @@
   },
   {
     "id": "leafgreen",
-    "title": "Leafgreen",
+    "title": "Leaf Green",
     "releaseDate": "2004-09-23",
     "console": "Game Boy Advance",
     "colorHex": "#A0B639",
@@ -127,7 +127,7 @@
   },
   {
     "id": "heartgold",
-    "title": "Heartgold",
+    "title": "Heart Gold",
     "releaseDate": "2010-03-14",
     "console": "Nintendo DS",
     "colorHex": "#C3A14B",
@@ -136,7 +136,7 @@
   },
   {
     "id": "soulsilver",
-    "title": "Soulsilver",
+    "title": "Soul Silver",
     "releaseDate": "2010-03-14",
     "console": "Nintendo DS",
     "colorHex": "#B4B9BB",
@@ -253,7 +253,7 @@
   },
   {
     "id": "lets-go-pikachu",
-    "title": "Lets Go Pikachu",
+    "title": "Let's Go Pikachu",
     "releaseDate": "2018-11-16",
     "console": "Nintendo Switch",
     "colorHex": "#EFD35E",
@@ -262,7 +262,7 @@
   },
   {
     "id": "lets-go-eevee",
-    "title": "Lets Go Eevee",
+    "title": "Let's Go Eevee",
     "releaseDate": "2018-11-16",
     "console": "Nintendo Switch",
     "colorHex": "#D3A167",

@@ -4,7 +4,7 @@ import { useSidecarCSS } from '../utils/css.js';
 
 useSidecarCSS(import.meta.url);
 
-function safe(s){ return String(s ?? ''); }
+function safe(s) { return String(s ?? ''); }
 
 export function PokemonCard(p, { onOpen } = {}) {
   const card = document.createElement('div');
@@ -19,7 +19,8 @@ export function PokemonCard(p, { onOpen } = {}) {
   card.appendChild(img);
 
   const title = document.createElement('div');
-  title.innerHTML = `<strong>${safe(p.name || '(Unnamed)')}</strong>${p.form ? ` <span class="muted">• ${safe(p.form)}</span>` : ''}`;
+  title.className = 'column';
+  title.innerHTML = `<strong>${safe(p.name || '(Unnamed)')}</strong>${p.form ? ` <span class="muted">${safe(p.form)}</span>` : ''}`;
   card.appendChild(title);
 
   const meta = document.createElement('div');
@@ -31,15 +32,17 @@ export function PokemonCard(p, { onOpen } = {}) {
 }
 
 export function GameCard(g, { onOpen } = {}) {
-  const card = document.createElement('div'); card.className = 'card';
+  const card = document.createElement('div');
+  card.className = 'card';
   card.style.cursor = 'pointer';
   card.addEventListener('click', () => onOpen?.(g));
 
-  const img = document.createElement('div'); img.className = 'game-img';
+  const img = document.createElement('div');
+  img.className = 'game-img';
   if (g.imageSlug) lazyBg(img, GAME_IMG(g.imageSlug));
   card.appendChild(img);
 
-  const date = g.releaseDate ? new Date(g.releaseDate).toISOString().slice(0,10) : '—';
+  const date = g.releaseDate ? new Date(g.releaseDate).toISOString().slice(0, 10) : '—';
   const title = document.createElement('div');
   title.innerHTML = `<strong>${safe(g.title || '(Untitled)')}</strong><span class="pill">${safe(g.console || '—')}</span><span class="pill">${date}</span>`;
   card.appendChild(title);
@@ -47,7 +50,7 @@ export function GameCard(g, { onOpen } = {}) {
   return card;
 }
 
-function pillTypes(p){
+function pillTypes(p) {
   if (p.type1 && p.type2) {
     return `<span class="pill">#${p.id}</span>
             <p class="pill pill-types">

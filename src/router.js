@@ -1,3 +1,7 @@
+// src/router.js
+// Simple hash router with query-string support.
+// Route handlers are called as handler(params, query).
+
 import { HomePage } from './pages/HomePage.js';
 import { AdminPage } from './pages/AdminPage.js';
 import { PokemonBrowsePage } from './pages/PokemonBrowsePage.js';
@@ -5,43 +9,150 @@ import { PokemonDetailPage } from './pages/PokemonDetailPage.js';
 import { GamesPage } from './pages/GamesPage.js';
 import { GameDetailPage } from './pages/GameDetailPage.js';
 
-function parseQueryFromHash() {
-  const h = location.hash || '';
-  const i = h.indexOf('?');
-  if (i < 0) return {};
-  return Object.fromEntries(new URLSearchParams(h.slice(i + 1)));
+// --------- Route table ---------
+const routes = [
+  { pattern: '/home', handler: HomePage },
+  { pattern: '/admin', handler: AdminPage },
+  { pattern: '/pokemon', handler: PokemonBrowsePage },
+  { pattern: '/pokemon/:id', handler: PokemonDetailPage },
+  { pattern: '/games', handler: GamesPage },
+  { pattern: '/games/:id', handler: GameDetailPage },
+];
+
+// Where to mount pages
+const APP_ROOT_ID = 'app';
+const DEFAULT_HASH = '#/home';
+
+// --------- Utilities ---------
+function compile(pattern) {
+  // Convert '/pokemon/:id' -> /^\/pokemon\/([^/]+)$/
+  const parts = pattern.split('/').filter(Boolean);
+  const keys = [];
+  const re = new RegExp(
+    '^/' +
+      parts
+        .map((p) => {
+          if (p.startsWith(':')) {
+            keys.push(p.slice(1));
+            return '([^/]+)';
+          }
+          return p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        })
+        .join('/') +
+      '$'
+  );
+  return { re, keys };
 }
 
-export function initRouter(mount) {
-  const routes = [
-    { re: /^#\/?$/, render: HomePage },
-    { re: /^#\/home\/?$/, render: HomePage },
-    { re: /^#\/admin\/?$/, render: AdminPage },
-    { re: /^#\/pokemon\/?$/, render: PokemonBrowsePage },
-    { re: /^#\/pokemon\/([^\/#?]+)\/?$/, render: (m,q)=>PokemonDetailPage({ id: m[1], query: q }) },
-    { re: /^#\/games\/?$/, render: GamesPage },
-    { re: /^#\/games\/([^\/#?]+)\/?$/, render: (m,q)=>GameDetailPage({ id: m[1], query: q }) },
-  ];
+const compiled = routes.map((r) => ({ ...r, ...compile(r.pattern) }));
 
-  function render() {
-    const hash = location.hash || '#/';
-    const query = parseQueryFromHash();
-    for (const r of routes) {
-      const m = hash.match(r.re);
-      if (m) {
-        mount.innerHTML = '';
-        const el = r.render.length ? r.render(m, query) : r.render();
-        if (el instanceof Node) mount.appendChild(el);
-        else if (typeof el === 'string') mount.innerHTML = el;
-        // Move focus to main content for a11y
-        mount.setAttribute('tabindex', '-1');
-        mount.focus({ preventScroll: true });
-        return;
-      }
+function parseLocation() {
+  // Ensure we always have a hash
+  let raw = window.location.hash || '';
+  if (!raw || raw === '#') raw = DEFAULT_HASH;
+
+  const [hashPath, queryString = ''] = raw.split('?');
+
+  // Normalise path: remove leading '#'
+  const path = hashPath.startsWith('#') ? hashPath.slice(1) : hashPath;
+
+  // Parse query params
+  const qs = new URLSearchParams(queryString);
+  const query = Object.fromEntries(qs.entries());
+
+  return { path, query };
+}
+
+function matchRoute(path) {
+  for (const r of compiled) {
+    const m = r.re.exec(path);
+    if (m) {
+      const params = {};
+      r.keys.forEach((k, i) => (params[k] = decodeURIComponent(m[i + 1] || '')));
+      return { handler: r.handler, params };
     }
-    mount.textContent = 'Not found.';
+  }
+  return null;
+}
+
+function mount(el) {
+  const root = document.getElementById(APP_ROOT_ID) || document.body;
+  // Clear
+  while (root.firstChild) root.removeChild(root.firstChild);
+  // Append
+  if (el instanceof Node) root.appendChild(el);
+  else if (typeof el === 'string') root.innerHTML = el;
+}
+
+// Build a new hash with optional query object
+function buildHash(path, query) {
+  const q = new URLSearchParams(query || {});
+  const qs = q.toString();
+  return '#' + path + (qs ? `?${qs}` : '');
+}
+
+// --------- Public API ---------
+export function navigate(path, query = null) {
+  const next = buildHash(path, query);
+  if (window.location.hash !== next) {
+    window.location.hash = next;
+  } else {
+    // If same hash, force a re-render
+    renderCurrentRoute();
+  }
+}
+
+export function renderCurrentRoute() {
+  // Redirect empty hash -> default
+  if (!window.location.hash || window.location.hash === '#') {
+    window.location.replace(DEFAULT_HASH);
+    return;
   }
 
-  window.addEventListener('hashchange', render);
-  render();
+  const { path, query } = parseLocation();
+  const hit = matchRoute(path);
+
+  if (!hit) {
+    mount('Not found.');
+    return;
+  }
+
+  // Call the page: handler(params, query)
+  try {
+    const view = hit.handler(hit.params, query);
+    mount(view);
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  } catch (err) {
+    console.error('Route render error:', err);
+    mount('Something went wrong rendering this page.');
+  }
 }
+
+export function initRouter() {
+  // Normalise initial hash, then render
+  if (!window.location.hash || window.location.hash === '#') {
+    window.location.replace(DEFAULT_HASH);
+    return;
+  }
+  window.addEventListener('hashchange', renderCurrentRoute, { passive: true });
+  renderCurrentRoute();
+}
+
+// Optional: intercept <a href="#/path"> clicks to stay SPA-friendly.
+// You can remove this if you don't use in-app anchor links.
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('a[href^="#/"]');
+  if (!a) return;
+  // Allow new tab / modifiers
+  if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+
+  e.preventDefault();
+  const url = new URL(a.getAttribute('href'), window.location.origin);
+  // url.hash gives "#/path?..."
+  const hash = url.hash || DEFAULT_HASH;
+  if (hash !== window.location.hash) {
+    window.location.hash = hash;
+  } else {
+    renderCurrentRoute();
+  }
+});

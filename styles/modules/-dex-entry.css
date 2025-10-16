@@ -1,0 +1,56 @@
+.dex {
+  display: grid;
+  grid-template-rows: auto;
+  gap: 0px;
+}
+
+.dex-entry {
+  display:grid;
+  grid-template-columns: 75px 1fr auto;
+  align-items: stretch;
+  padding: 0;
+  border: none;
+  background: var(--background);
+  overflow: hidden;
+}
+
+.dex-entry:not(:last-child) {
+  border-bottom: 1px solid color-mix(in srgb, var(--muted) 12%, var(--g-panel));
+}
+
+.dex-entry-header {
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items: center;
+  text-align: center;
+  line-height: 1em;
+  padding:1em 0.5em;
+  gap:0em;
+  background-color: var(--dex-color-light);
+}
+.dex-entry-header span:not(.pill) {
+  font-size:var(--font-sml);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color:var(--dex-color);
+}
+
+.actions {
+  display:flex;
+  justify-content: center;
+  align-items: center;
+  padding:0.5em 1em;
+}
+
+.dex-entry-body {
+  display: flex;
+  justify-content: left;
+  align-items: center;
+  column-gap: 1em;
+  padding: 1em 0.5em 1em 1em;
+}
+
+#notepadOverlay .dex {
+  padding:1em;
+}

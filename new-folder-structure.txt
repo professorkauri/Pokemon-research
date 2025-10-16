@@ -22,17 +22,17 @@
 ├─ styles/
 │  ├─ base.css               # global tokens, layout, typography, utilities
 │  ├─ modules/               # reusable component styles
-│  │  ├─ card.css
-│  │  ├─ dex-grid.css
-│  │  ├─ results.css
-│  │  └─ dex-entry.css
+│  │  ├─ -card.css
+│  │  ├─ -dex-grid.css
+│  │  ├─ -results.css
+│  │  └─ -dex-entry.css
 │  └─ pages/                 # route-specific/layout styles
-│     ├─ home.css
-│     ├─ admin.css
-│     ├─ pokemon-browse.css
-│     ├─ pokemon-detail.css
-│     ├─ games.css
-│     └─ game-detail.css
+│     ├─ -home.css
+│     ├─ -admin.css
+│     ├─ -pokemon-browse.css
+│     ├─ -pokemon-detail.css
+│     ├─ -games.css
+│     └─ -game-detail.css
 │
 ├─ src/
 │  ├─ main.js                # app bootstrapping (entry)
