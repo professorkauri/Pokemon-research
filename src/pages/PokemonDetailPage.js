@@ -1,12 +1,13 @@
 import { getPokemonById, listGames } from '../state/data-store.js';
 import { DexEntryListForPokemon } from '../modules/DexEntry.js';
-import './-pokemon-detail-page.css';
+import { useSidecarCSS } from '../utils/css.js';
 import { lazyBg, PKMN_IMG } from '../utils/images.js';
 import { setTypeData } from '../utils/types.js';
 import { renderResults } from '../modules/Results.js';
 import { listPokemon } from '../state/data-store.js';
 import { parseAndQuery } from '../utils/search.js';
 
+useSidecarCSS(import.meta.url);
 
 export function PokemonDetailPage({ id }) {
   const p = getPokemonById(id);

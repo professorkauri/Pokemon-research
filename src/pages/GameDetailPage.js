@@ -4,9 +4,10 @@ import { lazyBg, PKMN_IMG, GAME_IMG } from '../utils/images.js';
 import { loadCorpusForGame } from '../state/corpus-loader.js';
 import { renderDexGrid } from '../modules/DexGrid.js';
 import { updateQuery } from '../router.js';
+import { useSidecarCSS } from '../utils/css.js';
 import { addCorpusLineToNotepad } from '../overlays/NotepadOverlay.js'
 
-import './-game-detail-page.css';
+useSidecarCSS(import.meta.url);
 
 /**
  * Router contract (hash + query):

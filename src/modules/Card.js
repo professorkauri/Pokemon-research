@@ -1,7 +1,8 @@
 import { lazyBg, PKMN_IMG, GAME_IMG } from '../utils/images.js';
 import { setTypeData } from '../utils/types.js';
-import './-card.css';
+import { useSidecarCSS } from '../utils/css.js';
 
+useSidecarCSS(import.meta.url);
 
 function safe(s) { return String(s ?? ''); }
 

@@ -1,7 +1,9 @@
 import { listPokemon } from '../state/data-store.js';
 import { DexGrid } from '../modules/DexGrid.js';
 import { idComparator } from '../state/data-store.js';
-import './-pokemon-browse-page.css';
+import { useSidecarCSS } from '../utils/css.js';
+
+useSidecarCSS(import.meta.url);
 
 export function PokemonBrowsePage() {
   const wrap = document.createElement('div'); wrap.className = 'grid pokemon';

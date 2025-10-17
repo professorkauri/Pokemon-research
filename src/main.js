@@ -1,7 +1,6 @@
 import { initRouter } from './router.js';
 import { loadCoreData, getSettings } from './state/data-store.js';
 import { mountNotepadOverlay, openNotepad } from './overlays/NotepadOverlay.js';
-import './base.css';
 
 const app = document.getElementById('app');
 const header = document.getElementById('siteHeader');

@@ -1,6 +1,8 @@
 import { listGames, byReleaseDateAsc } from '../state/data-store.js';
 import { GameCard } from '../modules/Card.js';
-import './-games-page.css';
+import { useSidecarCSS } from '../utils/css.js';
+
+useSidecarCSS(import.meta.url);
 
 export function GamesPage() {
   const wrap = document.createElement('div'); wrap.className = 'grid';

@@ -1,6 +1,8 @@
 // DexGrid.js
 import { PokemonCard } from '../modules/Card.js';
-import './-dex-grid.css';
+import { useSidecarCSS } from '../utils/css.js';
+
+useSidecarCSS(import.meta.url);
 
 // Supports:
 //   renderDexGrid({ pokemon, mount, ...opts })
