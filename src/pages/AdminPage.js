@@ -1,11 +1,9 @@
 // AdminPage.js
-import { useSidecarCSS } from '../utils/css.js';
 import {
   // Still reuse shared settings + image paths from the store.
   getSettings, setSettings, imageBase,
 } from '../state/data-store.js';
 
-useSidecarCSS(import.meta.url);
 
 /* ------------------------------------------------
    Admin-local memory (single source of truth for UI + export)
