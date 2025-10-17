@@ -1,4 +1,5 @@
+// vite.config.js
 import { defineConfig } from 'vite';
 export default defineConfig({
-  base: '/Pokemon-research/',   // set this explicitly while testing
+  base: process.env.GITHUB_ACTIONS ? '/Pokemon-research/' : '/',
 });
