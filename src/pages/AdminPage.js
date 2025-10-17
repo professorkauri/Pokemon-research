@@ -16,6 +16,22 @@ const ADMIN = {
   games: [],
 };
 
+function byPokeIdForm(a, b) {
+  const parse = (id) => {
+    const s = String(id || '');
+    const m = s.match(/^(\d+)(?:-([a-z]+))?$/i);
+    if (!m) return [Number.POSITIVE_INFINITY, s.toLowerCase()]; // unknowns go last
+    return [parseInt(m[1], 10), (m[2] || '').toLowerCase()];
+  };
+  const [na, sa] = parse(a.id);
+  const [nb, sb] = parse(b.id);
+  if (na !== nb) return na - nb;          // numeric first
+  if (sa === sb) return 0;
+  if (sa === '') return -1;               // base form before suffixed forms
+  if (sb === '') return 1;
+  return sa < sb ? -1 : 1;                // suffix alphabetical: a, g, gm, etc.
+}
+
 // If your app already loads JSON elsewhere, swap this for that source.
 async function loadJson(url) {
   const res = await fetch(url, { cache: 'no-store' });
@@ -246,11 +262,12 @@ function AdminPage() {
     }
 
     if (activeTab === 'pokemon') {
-      const P = apListPokemon().filter(p =>
-        !filter ||
-        String(p.id).includes(filter) ||
-        (p.name || '').toLowerCase().includes(filter)
-      );
+      const P = apListPokemon()
+        .slice()
+        .sort(byPokeIdForm)
+        .filter(p => !filter ||
+          String(p.id).includes(filter) ||
+          (p.name || '').toLowerCase().includes(filter));
 
       if (!P.length) {
         list.appendChild(emptyRow('No Pokémon.'));

@@ -24,9 +24,9 @@
 .admin-layout {
   display: flex;
   height: 100%;
-  max-height: 100%;
+  max-height: calc(100vh - 57px - 54px);
   overflow: hidden;
-}
+  }
 
 .left-list {
   display:flex;
