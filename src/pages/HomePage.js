@@ -1,8 +1,7 @@
-import { useSidecarCSS } from '../utils/css.js';
+import './-home-page.css';
 import { renderResults } from '../modules/Results.js';
 import { listPokemon, listGames } from '../state/data-store.js';
 
-useSidecarCSS(import.meta.url);
 
 // Home page with URL-synced search (?q=...)
 export function HomePage(_match, query = {}) {

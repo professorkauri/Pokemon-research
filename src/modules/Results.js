@@ -1,4 +1,3 @@
-import { useSidecarCSS } from '../utils/css.js';
 import { parseAndQuery, textMatchesTerms, highlightHTMLMulti } from '../utils/search.js';
 import { lazyBg, PKMN_IMG, GAME_IMG } from '../utils/images.js';
 import { setTypeData } from '../utils/types.js';
@@ -6,8 +5,7 @@ import { listGames, getGameById } from '../state/data-store.js';
 import { loadCorpusText } from '../state/corpus-loader.js';
 import { addCorpusLineToNotepad } from '../overlays/NotepadOverlay.js';
 import { DexEntry as DexEntryCard } from './DexEntry.js';
-
-useSidecarCSS(import.meta.url);
+import './-results.css';
 
 /**
  * Unified results:
