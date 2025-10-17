@@ -1,8 +1,6 @@
-import { useSidecarCSS } from '../utils/css.js';
 import { highlightHTMLMulti } from '../utils/search.js';
 import { addDexToNotepad } from '../overlays/NotepadOverlay.js';
 
-useSidecarCSS(import.meta.url);
 
 /** Single source of truth for Dex entry cards */
 export function DexEntry({ gameId, gameTitle, entryText, regionalDexNumber, colorHex = '#888888', terms = [], pokemon = null, game = null }) {
