@@ -274,23 +274,20 @@ function AdminPage() {
         if (id) lazyBg(thumb, imageBase().pokemon + encodeURIComponent(id) + '.webp');
         else thumb.style.backgroundImage = 'none';
 
-        const labelWrap = document.createElement('div');
-        labelWrap.className = 'label';
         const label1 = document.createElement('strong');
         label1.innerHTML = `${escapeHtml(p.name || '(Unnamed)')}`;
         const sub = document.createElement('div');
         sub.className = 'muted';
         sub.innerHTML = `${escapeHtml(String(p.id || ''))}`;
-        labelWrap.append(label1, sub);
+
+        row.append(thumb, label1, sub);
 
         if (p._deleted) {
           const pill = document.createElement('span');
           pill.className = 'pill pill-danger';
           pill.textContent = 'Deleted';
-          labelWrap.appendChild(pill);
+          row.appendChild(pill);
         }
-
-        row.append(thumb, labelWrap);
         list.appendChild(row);
       }
       return;
@@ -329,23 +326,22 @@ function AdminPage() {
           thumb.style.background = g.colorHex || '#999';
         }
 
-        const label = document.createElement('div');
-        label.className = 'label';
+        
         const title = document.createElement('strong');
         title.textContent = g.title || '(Untitled)';
         const meta = document.createElement('div');
         meta.className = 'muted';
         meta.textContent = g.console || '';
-        label.append(title, meta);
+
+        row.append(thumb, title, meta);
 
         if (g._deleted) {
           const pill = document.createElement('span');
           pill.className = 'pill pill-danger';
           pill.textContent = 'Deleted';
-          label.appendChild(pill);
+          row.appendChild(pill);
         }
-
-        row.append(thumb, label);
+      
         list.appendChild(row);
       }
       return;
