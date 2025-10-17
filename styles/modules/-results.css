@@ -165,11 +165,12 @@
   margin: 0;
   column-gap: 0.5em;
 }
-.corpus_line.line-highlight {
+.corpus_line.active {
   outline: 2px solid var(--dex-color, --background);
   background: color-mix(in srgb, var(--background) 40%, transparent);
 }
 
-.corpus_line.line-highlight span {
+.corpus_line.active span {
   background: none;
 }
+

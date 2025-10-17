@@ -6,7 +6,7 @@ import { useSidecarCSS } from '../utils/css.js';
 useSidecarCSS(import.meta.url);
 
 export function PokemonBrowsePage() {
-  const wrap = document.createElement('div');
+  const wrap = document.createElement('div'); wrap.className = 'grid pokemon';
   const list = listPokemon().slice().sort(idComparator);
   const grid = DexGrid(list, {
     onOpen: (p) => location.hash = `#/pokemon/${encodeURIComponent(p.id)}`

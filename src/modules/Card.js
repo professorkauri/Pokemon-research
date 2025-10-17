@@ -35,6 +35,7 @@ export function GameCard(g, { onOpen } = {}) {
   const card = document.createElement('div');
   card.className = 'card';
   card.style.cursor = 'pointer';
+  card.style.setProperty('--dex-color', g.colorHex);
   card.addEventListener('click', () => onOpen?.(g));
 
   const img = document.createElement('div');
@@ -42,9 +43,15 @@ export function GameCard(g, { onOpen } = {}) {
   if (g.imageSlug) lazyBg(img, GAME_IMG(g.imageSlug));
   card.appendChild(img);
 
-  const date = g.releaseDate ? new Date(g.releaseDate).toISOString().slice(0, 10) : '—';
+  const date = g.releaseDate
+  ? new Date(g.releaseDate).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: '2-digit'
+    })
+  : '—';
   const title = document.createElement('div');
-  title.innerHTML = `<strong>${safe(g.title || '(Untitled)')}</strong><span class="pill">${safe(g.console || '—')}</span><span class="pill">${date}</span>`;
+  title.innerHTML = `<strong>${safe(g.title || '(Untitled)')}</strong><span class="pill muted">${safe(g.console || '—')}</span><span class="pill muted">${date}</span>`;
   card.appendChild(title);
 
   return card;

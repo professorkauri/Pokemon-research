@@ -9,14 +9,16 @@ const overlays = document.getElementById('overlays');
 // Basic header + nav
 function renderHeader() {
   header.innerHTML = `
-    <div class="brand">Pokemon Research</div>
-    <nav class="segmented">
-      <a class="seg" href="#/home">Home</a>
-      <a class="seg" href="#/pokemon">Pokemon</a>
-      <a class="seg" href="#/games">Games</a>
-      <a class="seg" href="#/admin">Admin</a>
-      <button id="openNotepad" class="btn">📓 Notepad</button>
-    </nav>
+    <div class="page-width">
+      <div class="brand">Pokemon Research</div>
+      <nav class="segmented">
+        <a class="seg" href="#/home">Home</a>
+        <a class="seg" href="#/pokemon">Pokemon</a>
+        <a class="seg" href="#/games">Games</a>
+        <a class="seg" href="#/admin">Admin</a>
+        <button id="openNotepad" class="btn">📓 Notepad</button>
+      </nav>
+    </div>
   `;
   header.querySelector('#openNotepad')?.addEventListener('click', openNotepad);
 }

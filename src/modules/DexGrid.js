@@ -38,14 +38,14 @@ function setCardIdPill(cardEl, text) {
 
 function goToPokemon(id) {
   const seg = encodeURIComponent(String(id));
-  // Trigger your hash router; it has a route: /^#\/pokemon\/([^\/#?]+)\/?$/
+  // Trigger your hash router; it has a route: /^#\/pokemon\/([^\/#?]+)\/?$/ 
   location.hash = `#/pokemon/${seg}`;
 }
 
 export function renderDexGrid(arg1, arg2) {
   const { pokemon, opts } = normalizeDexGridArgs(arg1, arg2);
   const {
-    mount,          // optional mount node
+    mount,          // optional mount node (pre-existing container)
     gameId,         // optional passthrough to Card
     filter,         // (p) => boolean
     sortFn,         // (a, b) => number
@@ -57,17 +57,23 @@ export function renderDexGrid(arg1, arg2) {
   if (typeof filter === 'function') list = list.filter(filter);
   if (typeof sortFn === 'function') list = list.slice().sort(sortFn);
 
-  // 2) render grid
-  const root = document.createElement('div');
-  root.className = 'grid pokemon';
+  // 2) choose container: use mount if provided, otherwise a fragment.
+  if (mount instanceof Node) {
+    // Clear existing children but DO NOT change classes — caller owns them.
+    mount.innerHTML = '';
+  }
+  const container = (mount instanceof Node)
+    ? mount
+    : document.createDocumentFragment();
 
+  // 3) build cards
   for (const p of list) {
     let produced = null;
     try {
       produced = (typeof PokemonCard === 'function')
         ? PokemonCard(p, {
             gameId,
-            onOpen: ({ id }) => goToPokemon(id)
+            onOpen: ({ id }) => goToPokemon(id),
           })
         : null;
     } catch {
@@ -99,17 +105,11 @@ export function renderDexGrid(arg1, arg2) {
       if (pillText) setCardIdPill(card, pillText);
     }
 
-    root.appendChild(card);
+    container.appendChild(card);
   }
 
-  // 3) mount if provided
-  if (mount instanceof Node) {
-    mount.innerHTML = '';
-    mount.appendChild(root);
-    return mount;
-  }
-
-  return root;
+  // 4) return the node we populated
+  return (mount instanceof Node) ? mount : container;
 }
 
 export { renderDexGrid as DexGrid };

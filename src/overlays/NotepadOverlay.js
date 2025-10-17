@@ -3,6 +3,7 @@ import { setTypeData } from '../utils/types.js';
 import { lazyBg, PKMN_IMG, GAME_IMG } from '../utils/images.js';
 
 // Public API so other modules can add items
+// NotepadOverlay.js
 export function addDexToNotepad({ p, game, entryText, regionalDexNumber = '' }) {
   const list = loadNotepad();
   const id = `dex:${p.id}`;
@@ -10,21 +11,30 @@ export function addDexToNotepad({ p, game, entryText, regionalDexNumber = '' }) 
   if (!group) {
     group = {
       id, kind: 'dex',
-      pId: String(p.id), pName: p.name || '(Unnamed)',
-      pForm: p.form || '', pType1: p.type1 || '', pType2: p.type2 || '',
+      pId: String(p.id),
+      pName: p.name || '(Unnamed)',
+      pForm: p.form || '',
+      pType1: p.type1 || '',
+      pType2: p.type2 || '',
       entries: []
     };
     list.push(group);
   }
-  const gameColorHex = (game?.colorHex && /^#[0-9a-f]{6}$/i.test(game.colorHex)) ? game.colorHex.toUpperCase() : '#888888';
+
+  const gameColorHex =
+    (game?.colorHex && /^#[0-9a-f]{6}$/i.test(game.colorHex))
+      ? game.colorHex.toUpperCase()
+      : '#888888';
+
   const exists = group.entries.some(e =>
     String(e.gameId) === String(game?.id) &&
     String(e.entryText || '').trim() === String(entryText || '').trim()
   );
+
   if (!exists) {
     group.entries.push({
       id: uid(),
-      pId: pID,
+      pId: String(p.id), // <-- fixed (was pID)
       gameId: game?.id ?? '',
       gameTitle: game?.title ?? '(Game)',
       gameColorHex,
@@ -32,9 +42,11 @@ export function addDexToNotepad({ p, game, entryText, regionalDexNumber = '' }) 
       regionalDexNumber: String(regionalDexNumber || '')
     });
   }
+
   saveNotepad(list);
   renderIfMounted();
 }
+
 
 export function addCorpusLineToNotepad({ game, lineNumber, lineText }) {
   const list = loadNotepad();

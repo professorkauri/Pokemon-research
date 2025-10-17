@@ -1,0 +1,38 @@
+
+.game-corpus-results {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+  border: 1px solid var(--dex-color, var(--g-bar));
+  border-radius: var(--border-rad-nml);
+  background: var(--g-panel);
+  box-shadow: var(--shadow);
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+  padding: 0;
+}
+
+.game-corpus-results-header {
+  display: flex;
+  position:sticky;
+  justify-content: space-between;
+  align-items: center;
+  top:51px;
+  padding: 2em;
+  font-weight:bold;
+  color:var(--dex-color);
+  text-transform:uppercase;
+  text-align: center;
+  border-radius: var(--border-rad-nml);
+  background: var(--dex-color-light);
+}
+
+.gotoline {
+  display:flex;
+  gap:1em;
+}
+
+.gotoline input {
+  width:150px;
+}
+.gotoline .btn {
+}

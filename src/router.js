@@ -1,5 +1,5 @@
 // src/router.js
-// Simple hash router with query-string support.
+// Simple router with hash + query-string support.
 // Route handlers are called as handler(params, query).
 
 import { HomePage } from './pages/HomePage.js';
@@ -36,7 +36,7 @@ function compile(pattern) {
             keys.push(p.slice(1));
             return '([^/]+)';
           }
-          return p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          return p.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');
         })
         .join('/') +
       '$'
@@ -46,21 +46,34 @@ function compile(pattern) {
 
 const compiled = routes.map((r) => ({ ...r, ...compile(r.pattern) }));
 
+/**
+ * Parse current URL into { path, query }.
+ * - Primary router source is the hash (e.g. '#/pokemon?tab=stats')
+ * - If the hash has no query, we also merge in window.location.search (?q=...),
+ *   with the hash query taking priority if both exist.
+ */
 function parseLocation() {
-  // Ensure we always have a hash
   let raw = window.location.hash || '';
   if (!raw || raw === '#') raw = DEFAULT_HASH;
 
-  const [hashPath, queryString = ''] = raw.split('?');
-
-  // Normalise path: remove leading '#'
+  const [hashPath, hashQueryString = ''] = raw.split('?');
   const path = hashPath.startsWith('#') ? hashPath.slice(1) : hashPath;
 
-  // Parse query params
-  const qs = new URLSearchParams(queryString);
-  const query = Object.fromEntries(qs.entries());
+  // Parse hash query (if any)
+  const hashQS = new URLSearchParams(hashQueryString);
 
-  return { path, query };
+  // Parse real search query (?foo=bar) as a fallback / merge
+  const searchString = window.location.search.startsWith('?')
+    ? window.location.search.slice(1)
+    : '';
+  const searchQS = new URLSearchParams(searchString);
+
+  // Merge: hash query wins over real search params if keys collide
+  const merged = {};
+  for (const [k, v] of searchQS.entries()) merged[k] = v;
+  for (const [k, v] of hashQS.entries()) merged[k] = v;
+
+  return { path, query: merged };
 }
 
 function matchRoute(path) {
@@ -77,33 +90,19 @@ function matchRoute(path) {
 
 function mount(el) {
   const root = document.getElementById(APP_ROOT_ID) || document.body;
-  // Clear
   while (root.firstChild) root.removeChild(root.firstChild);
-  // Append
   if (el instanceof Node) root.appendChild(el);
   else if (typeof el === 'string') root.innerHTML = el;
 }
 
-// Build a new hash with optional query object
 function buildHash(path, query) {
   const q = new URLSearchParams(query || {});
   const qs = q.toString();
   return '#' + path + (qs ? `?${qs}` : '');
 }
 
-// --------- Public API ---------
-export function navigate(path, query = null) {
-  const next = buildHash(path, query);
-  if (window.location.hash !== next) {
-    window.location.hash = next;
-  } else {
-    // If same hash, force a re-render
-    renderCurrentRoute();
-  }
-}
-
+// --------- Rendering ---------
 export function renderCurrentRoute() {
-  // Redirect empty hash -> default
   if (!window.location.hash || window.location.hash === '#') {
     window.location.replace(DEFAULT_HASH);
     return;
@@ -117,7 +116,6 @@ export function renderCurrentRoute() {
     return;
   }
 
-  // Call the page: handler(params, query)
   try {
     const view = hit.handler(hit.params, query);
     mount(view);
@@ -128,31 +126,71 @@ export function renderCurrentRoute() {
   }
 }
 
-export function initRouter() {
-  // Normalise initial hash, then render
-  if (!window.location.hash || window.location.hash === '#') {
-    window.location.replace(DEFAULT_HASH);
+// --------- Public API ---------
+/**
+ * Navigate to a path+query. If `replace` is true, use history.replaceState
+ * and force a render (since no hashchange event will fire).
+ */
+export function navigate(path, query = null, { replace = false } = {}) {
+  const nextHash = buildHash(path, query);
+
+  if (replace) {
+    const url = new URL(window.location.href);
+    url.hash = nextHash;
+    history.replaceState(null, '', url);
+    renderCurrentRoute();
     return;
   }
+
+  if (window.location.hash !== nextHash) {
+    window.location.hash = nextHash; // will trigger 'hashchange'
+  } else {
+    // Same hash (e.g., only query logical change to same string) → force render
+    renderCurrentRoute();
+  }
+}
+
+/**
+ * Update only the query of the current route (keeps the same path).
+ * `patch` can be an object to merge or a function(prev) => next.
+ */
+export function updateQuery(patch, { replace = false } = {}) {
+  const { path, query } = parseLocation();
+  const nextQuery =
+    typeof patch === 'function' ? patch({ ...query }) : { ...query, ...patch };
+  navigate(path, nextQuery, { replace });
+}
+
+// --------- Init & link interception ---------
+export function initRouter() {
+  if (!window.location.hash || window.location.hash === '#') {
+    window.location.replace(DEFAULT_HASH);
+    // After replace, we’re already at the default; render immediately.
+    renderCurrentRoute();
+    return;
+  }
+
   window.addEventListener('hashchange', renderCurrentRoute, { passive: true });
+  // Catch navigation that changes only window.location.search (via History API)
+  window.addEventListener('popstate', renderCurrentRoute, { passive: true });
+
   renderCurrentRoute();
 }
 
-// Optional: intercept <a href="#/path"> clicks to stay SPA-friendly.
-// You can remove this if you don't use in-app anchor links.
+// Intercept in-app anchor links (e.g., <a href="#/pokemon?tab=stats">)
 document.addEventListener('click', (e) => {
   const a = e.target.closest('a[href^="#/"]');
   if (!a) return;
-  // Allow new tab / modifiers
   if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
 
   e.preventDefault();
   const url = new URL(a.getAttribute('href'), window.location.origin);
-  // url.hash gives "#/path?..."
   const hash = url.hash || DEFAULT_HASH;
-  if (hash !== window.location.hash) {
-    window.location.hash = hash;
-  } else {
-    renderCurrentRoute();
-  }
+
+  // Parse so we can navigate consistently (and support { replace } later if needed)
+  const [hPath, hQS = ''] = hash.split('?');
+  const path = hPath.startsWith('#') ? hPath.slice(1) : hPath;
+  const query = Object.fromEntries(new URLSearchParams(hQS).entries());
+
+  navigate(path, query);
 });

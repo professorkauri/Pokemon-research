@@ -303,9 +303,15 @@ body {
 }
 
 main {
-  padding: 24px 16px 64px;
+  padding: 0 2em;
+  display: block;
+  --pw-pad: calc((100vw - 1200px) / 2);
+  padding: 0 var(--pw-pad);
 }
 
+main#app > .grid {
+  padding:2em;
+}
 
 
 .subsection {
@@ -381,6 +387,18 @@ BEHAVIOUR MODIFIERS
   margin:0;
 }
 
+.home,
+.page-width {
+  max-width:1200px;
+  margin-left:auto;
+  margin-right:auto;
+}
+
+.home {
+  overflow-y: scroll;
+  height: 100%;
+}
+
 
 /************************************************************************************************************************************
 HEADER
@@ -395,6 +413,9 @@ header {
   backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--g-bar);
   padding: 10px 16px;
+}
+
+header .page-width {
   display: grid;
   grid-template-columns: 1fr auto auto;
   gap: 10px;
@@ -711,6 +732,12 @@ textarea {
   .result:not([data-type1]) .result-img {
     width:27px;
   }
+
+  .thumb {
+    width: 25px;
+    height: 25px;
+    display: block;
+}
 
   /************************************************************************************************************************************
   NOTEPAD OVERLAY

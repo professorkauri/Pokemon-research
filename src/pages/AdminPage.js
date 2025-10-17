@@ -1,15 +1,42 @@
 // AdminPage.js
 import { useSidecarCSS } from '../utils/css.js';
 import {
-  listPokemon, listGames,
-  getPokemonById, getGameById,
-  getSettings, setSettings, imageBase
+  // Still reuse shared settings + image paths from the store.
+  getSettings, setSettings, imageBase,
 } from '../state/data-store.js';
 
 useSidecarCSS(import.meta.url);
 
 /* ------------------------------------------------
-   Small constants / helpers (declared first)
+   Admin-local memory (single source of truth for UI + export)
+--------------------------------------------------*/
+const ADMIN = {
+  ready: false,
+  pokemon: [],
+  games: [],
+};
+
+// If your app already loads JSON elsewhere, swap this for that source.
+async function loadJson(url) {
+  const res = await fetch(url, { cache: 'no-store' });
+  if (!res.ok) throw new Error(`${url} -> ${res.status}`);
+  return res.json();
+}
+
+async function ensureAdminMemory() {
+  if (ADMIN.ready) return;
+  const [pokemon, games] = await Promise.all([
+    loadJson('./data/pokemon.json').catch(() => []),
+    loadJson('./data/games.json').catch(() => []),
+  ]);
+  // Make admin-local copies (don’t mutate original arrays)
+  ADMIN.pokemon = Array.isArray(pokemon) ? pokemon.map(x => ({ ...structuredClone(x), _deleted: !!x._deleted })) : [];
+  ADMIN.games   = Array.isArray(games)   ? games.map(x => ({ ...structuredClone(x), _deleted: !!x._deleted }))   : [];
+  ADMIN.ready = true;
+}
+
+/* ------------------------------------------------
+   Small constants / helpers
 --------------------------------------------------*/
 const TYPE_OPTIONS = ["", "Normal", "Fire", "Water", "Electric", "Grass", "Ice", "Fighting", "Poison", "Ground", "Flying", "Psychic", "Bug", "Rock", "Ghost", "Dragon", "Dark", "Steel", "Fairy"];
 
@@ -19,8 +46,8 @@ function escapeHtml(s) {
   ));
 }
 function byReleaseDateAsc(a, b) {
-  const da = Date.parse(a.releaseDate || '1970-01-01');
-  const db = Date.parse(b.releaseDate || '1970-01-01');
+  const da = Date.parse(a?.releaseDate || '1970-01-01');
+  const db = Date.parse(b?.releaseDate || '1970-01-01');
   return (isNaN(da) ? 0 : da) - (isNaN(db) ? 0 : db);
 }
 function setBackground(el, url) {
@@ -28,6 +55,19 @@ function setBackground(el, url) {
   el.style.backgroundSize = 'cover';
   el.style.backgroundPosition = 'center';
 }
+
+// Admin-memory list/get (single source of truth)
+function apListPokemon() { return ADMIN.pokemon.slice(); }
+function apListGames()   { return ADMIN.games.slice(); }
+function apGetPokemonById(id) {
+  const key = String(id);
+  return ADMIN.pokemon.find(p => String(p?.id) === key) || null;
+}
+function apGetGameById(id) {
+  const key = String(id);
+  return ADMIN.games.find(g => String(g?.id) === key) || null;
+}
+
 // --- Lazy background images for list thumbs ---
 let __lazyObs = null;
 function ensureLazyObserver() {
@@ -58,7 +98,7 @@ function setTypeDataAttr(el, attr, value) {
   if (v) el.setAttribute(attr, v); else el.removeAttribute(attr);
 }
 
-/** Accepts legacy array/object pokedex and returns a canonical object:
+/** Normalize legacy pokedex formats to:
  *   { [gameId]: { regionalDexNumber: string, entry: string } }
  */
 function getPokedexObject(p) {
@@ -90,7 +130,7 @@ function getPokedexObject(p) {
    Component
 --------------------------------------------------*/
 function AdminPage() {
-  // ---------- State (must be defined before any usage) ----------
+  // ---------- State ----------
   let activeTab = 'pokemon';    // 'settings' | 'pokemon' | 'games'
   let selectedId = null;
   let filter = '';
@@ -101,31 +141,36 @@ function AdminPage() {
 
   const topbar = document.createElement('div');
   topbar.className = 'admin-topbar';
-  const btnExport = document.createElement('button');
-  btnExport.textContent = 'Download settings.json';
-  btnExport.addEventListener('click', downloadAll);
-  const btnAdd = document.createElement('button');
-  btnAdd.textContent = 'New';
-  btnAdd.style.display = 'inline-block';
-  btnAdd.addEventListener('click', () => {
-    selectedId = null;
-    if (activeTab === 'pokemon') {
-      renderEditor({ __new__: true, section: 'pokemon' });
-    } else if (activeTab === 'games') {
-      renderEditor({ __new__: true, section: 'games' });
-    }
-  });
-  topbar.append(btnExport, btnAdd);
-  root.appendChild(topbar);
 
   // Tabs
   const tabs = document.createElement('div');
   tabs.className = 'segmented';
   const tSettings = makeTab('Settings', 'settings');
-  const tPokemon = makeTab('Pokémon', 'pokemon');
-  const tGames = makeTab('Games', 'games');
+  const tPokemon  = makeTab('Pokémon', 'pokemon');
+  const tGames    = makeTab('Games', 'games');
   tabs.append(tSettings, tPokemon, tGames);
-  root.appendChild(tabs);
+  topbar.appendChild(tabs);
+
+  const topbar_right = document.createElement('div');
+  topbar_right.className = 'admin-topbar-right';
+
+  const btnExport = document.createElement('button');
+  btnExport.textContent = 'Download settings.json';
+  btnExport.className = 'btn accent';
+  btnExport.addEventListener('click', downloadAll);
+
+  const btnAdd = document.createElement('button');
+  btnAdd.textContent = 'Add Item';
+  btnAdd.className = 'btn';
+  btnAdd.addEventListener('click', () => {
+    selectedId = null;
+    if (activeTab === 'pokemon') renderEditor({ __new__: true, section: 'pokemon' });
+    else if (activeTab === 'games') renderEditor({ __new__: true, section: 'games' });
+  });
+
+  topbar_right.append(btnAdd, btnExport);
+  topbar.appendChild(topbar_right);
+  root.appendChild(topbar);
 
   // Layout
   const layout = document.createElement('div'); layout.className = 'admin-layout';
@@ -141,12 +186,23 @@ function AdminPage() {
   const list = document.createElement('div'); list.className = 'left-scroll';
   left.append(searchWrap, list);
 
-  // Initial paint
-  setActive();
-  renderList();
-  renderEditor();
+  // Initial paint (load admin memory first)
+  boot();
 
   return root;
+
+  async function boot() {
+    right.innerHTML = '';
+    left.classList.add('loading');
+    try {
+      await ensureAdminMemory();
+    } finally {
+      left.classList.remove('loading');
+    }
+    setActive();
+    renderList();
+    renderEditor();
+  }
 
   /* ---------------- Tabs ---------------- */
   function makeTab(label, key) {
@@ -166,22 +222,21 @@ function AdminPage() {
       : (activeTab === 'pokemon') ? 'Download Pokémon JSON'
         : 'Download Games JSON';
 
-    // 🔽 Hide left column + search on Settings
+    // Hide left column + search on Settings
     const hideLeft = (activeTab === 'settings');
-    left.style.display = hideLeft ? 'none' : 'block';
+    left.style.display = hideLeft ? 'none' : '';
     right.style.flex = '1 1 auto';
-    searchWrap.style.display = hideLeft ? 'none' : 'block';
+    searchWrap.style.display = hideLeft ? 'none' : '';
 
     if (!hideLeft) {
-      search.placeholder = (activeTab === 'pokemon') ? 'Search Pokémon…' : 'Search Games…';
+      search.placeholder = (activeTab === 'pokemon') ? 'Filter Pokémon…' : 'Filter Games…';
     }
   }
-
 
   /* ---------------- Left column ---------------- */
   function renderList() {
     list.innerHTML = '';
-  
+
     if (activeTab === 'settings') {
       const p = document.createElement('p');
       p.className = 'muted';
@@ -189,79 +244,113 @@ function AdminPage() {
       list.appendChild(p);
       return;
     }
-  
+
     if (activeTab === 'pokemon') {
-      const P = listPokemon().filter(p =>
+      const P = apListPokemon().filter(p =>
         !filter ||
         String(p.id).includes(filter) ||
         (p.name || '').toLowerCase().includes(filter)
       );
-  
+
       if (!P.length) {
         list.appendChild(emptyRow('No Pokémon.'));
         return;
       }
-  
+
       for (const p of P) {
-        const row = document.createElement('div');            // ✅ define row
-        row.className = 'row-item';
-        row.onclick = () => { selectedId = String(p.id); renderEditor(); };
-  
+        const row = document.createElement('div');
+        row.className = 'row-item' + (String(p.id) === String(selectedId) ? ' active' : '');
+        if (p._deleted) row.classList.add('is-deleted');
+        row.onclick = () => {
+          selectedId = String(p.id);
+          list.querySelectorAll('.row-item.active').forEach(el => el.classList.remove('active'));
+          row.classList.add('active');
+          renderEditor();
+        };
+
         const thumb = document.createElement('div');
         thumb.className = 'thumb';
         const id = (p.id || '').toString().trim();
         if (id) lazyBg(thumb, imageBase().pokemon + encodeURIComponent(id) + '.webp');
         else thumb.style.backgroundImage = 'none';
-  
-        const label = document.createElement('div');
-        label.className = 'label';
-        label.innerHTML = `<strong>${escapeHtml(p.name || '(Unnamed)')}</strong><div class="muted">#${escapeHtml(String(p.id || ''))}</div>`;
-  
-        row.append(thumb, label);
+
+        const labelWrap = document.createElement('div');
+        labelWrap.className = 'label';
+        const label1 = document.createElement('strong');
+        label1.innerHTML = `${escapeHtml(p.name || '(Unnamed)')}`;
+        const sub = document.createElement('div');
+        sub.className = 'muted';
+        sub.innerHTML = `${escapeHtml(String(p.id || ''))}`;
+        labelWrap.append(label1, sub);
+
+        if (p._deleted) {
+          const pill = document.createElement('span');
+          pill.className = 'pill pill-danger';
+          pill.textContent = 'Deleted';
+          labelWrap.appendChild(pill);
+        }
+
+        row.append(thumb, labelWrap);
         list.appendChild(row);
       }
       return;
     }
-  
+
     if (activeTab === 'games') {
-      const G = listGames().filter(g =>
+      const G = apListGames().filter(g =>
         !filter ||
         (g.title || '').toLowerCase().includes(filter) ||
         (g.console || '').toLowerCase().includes(filter)
       );
-  
+
       if (!G.length) {
         list.appendChild(emptyRow('No games.'));
         return;
       }
-  
+
       for (const g of G) {
-        const row = document.createElement('div');            // ✅ define row
-        row.className = 'row-item';
-        row.onclick = () => { selectedId = String(g.id); renderEditor(); };
-  
+        const row = document.createElement('div');
+        row.className = 'row-item' + (String(g.id) === String(selectedId) ? ' active' : '');
+        if (g._deleted) row.classList.add('is-deleted');
+        row.onclick = () => {
+          selectedId = String(g.id);
+          list.querySelectorAll('.row-item.active').forEach(el => el.classList.remove('active'));
+          row.classList.add('active');
+          renderEditor();
+        };
+
         const thumb = document.createElement('div');
         thumb.className = 'thumb';
-  
+
         if (g.imageSlug) {
           const url = imageBase().games + encodeURIComponent(String(g.imageSlug)) + '.webp';
           lazyBg(thumb, url);
         } else {
-          // fallback: colour swatch if no image
           thumb.style.background = g.colorHex || '#999';
         }
-  
+
         const label = document.createElement('div');
         label.className = 'label';
-        label.innerHTML = `<strong>${escapeHtml(g.title || '(Untitled)')}</strong><div class="muted">${escapeHtml(g.console || '')}</div>`;
-  
+        const title = document.createElement('strong');
+        title.textContent = g.title || '(Untitled)';
+        const meta = document.createElement('div');
+        meta.className = 'muted';
+        meta.textContent = g.console || '';
+        label.append(title, meta);
+
+        if (g._deleted) {
+          const pill = document.createElement('span');
+          pill.className = 'pill pill-danger';
+          pill.textContent = 'Deleted';
+          label.appendChild(pill);
+        }
+
         row.append(thumb, label);
         list.appendChild(row);
       }
       return;
     }
   }
-  
 
   /* ---------------- Right column ---------------- */
   function renderEditor(opts = null) {
@@ -275,43 +364,61 @@ function AdminPage() {
   /* -------- Settings editor -------- */
   function renderSettingsEditor() {
     const s = structuredClone(getSettings() || {});
-    const header = rowHeader('Settings', [
-      button('Save', () => { setSettings(s); alert('Settings saved (in-memory).'); })
-    ]);
-    right.appendChild(header);
 
     const wrap = document.createElement('div'); wrap.className = 'form-grid';
 
     wrap.appendChild(groupTitle('App & Theme'));
-    wrap.appendChild(fieldText('App Title', s.app?.title || '', v => { s.app ||= {}; s.app.title = v; }).container);
-    wrap.appendChild(fieldText('Theme', s.app?.theme || '', v => { s.app ||= {}; s.app.theme = v; }).container);
+    wrap.appendChild(fieldText('App Title', s.app?.title || '', v => { s.app ||= {}; s.app.title = v; setSettings(s); }).container);
+    wrap.appendChild(fieldText('Theme', s.app?.theme || '', v => { s.app ||= {}; s.app.theme = v; setSettings(s); }).container);
 
     wrap.appendChild(groupTitle('UI Options'));
-    wrap.appendChild(fieldCheckbox('Show debug tools', !!s.ui?.debug, v => { s.ui ||= {}; s.ui.debug = v; }).container);
-    wrap.appendChild(fieldCheckbox('Use compact lists', !!s.ui?.compact, v => { s.ui ||= {}; s.ui.compact = v; }).container);
-
-    wrap.appendChild(groupTitle('Assets'));
-    wrap.appendChild(fieldText('Image base (Pokémon)', s.assets?.pokemonBase || '', v => { s.assets ||= {}; s.assets.pokemonBase = v; }).container);
-    wrap.appendChild(fieldText('Image base (Games)', s.assets?.gameBase || '', v => { s.assets ||= {}; s.assets.gameBase = v; }).container);
+    wrap.appendChild(fieldCheckbox('Show debug tools', !!s.ui?.debug, v => { s.ui ||= {}; s.ui.debug = v; setSettings(s); }).container);
+    wrap.appendChild(fieldCheckbox('Use compact lists', !!s.ui?.compact, v => { s.ui ||= {}; s.ui.compact = v; setSettings(s); }).container);
 
     right.appendChild(wrap);
   }
 
-  /* -------- Pokémon editor (full detail + per-game Pokédex) -------- */
+  /* -------- Pokémon editor -------- */
   function renderPokemonEditor(opts) {
     let p;
     if (opts?.__new__) {
-      p = { id: '', name: '', form: '', species: '', category: '', evolution: '', type1: '', type2: '', hp: null, attack: null, defense: null, spAtk: null, spDef: null, speed: null, pokedex: {} };
+      p = { id: '', name: '', form: '', species: '', category: '', evolution: '', type1: '', type2: '', hp: null, attack: null, defense: null, spAtk: null, spDef: null, speed: null, pokedex: {}, _deleted: false };
+      ADMIN.pokemon.push(p);
+      selectedId = p.id || null;
     } else if (selectedId != null) {
-      p = getPokemonById(selectedId);
+      p = apGetPokemonById(selectedId);
     }
-    const header = rowHeader('Pokémon', [
-      button('Save', () => { alert('Hook this to your store writer if you want persistence.'); }),
-      button('Delete', () => { alert('Hook this to your delete logic.'); })
-    ]);
-    right.appendChild(header);
 
-    if (!p) { right.appendChild(emptyRow('Select a Pokémon to edit or click New.')); return; }
+    if (!p) {
+      right.appendChild(emptyRow('Select a Pokémon to edit or click New.'));
+      return;
+    }
+
+    // --- Header strip (Delete / Undo & status)
+    const header = document.createElement('div');
+    header.className = 'right-header';
+    const titleSide = document.createElement('div');
+    const status = document.createElement('span');
+    status.className = 'pill pill-danger';
+    const setStatus = () => {
+      if (p._deleted) {
+        status.style.display = '';
+        status.textContent = 'Marked for deletion';
+      } else {
+        status.style.display = 'none';
+      }
+    };
+    setStatus();
+    titleSide.appendChild(status);
+
+    const tools = document.createElement('div');
+    tools.className = 'toolbar';
+    tools.appendChild(makeDeleteToggleButton('pokemon', () => p, () => {
+      setStatus();
+      renderList(); // update left list badges
+    }));
+    header.append(titleSide, tools);
+    right.appendChild(header);
 
     // image preview
     const preview = document.createElement('div'); preview.className = 'img-preview';
@@ -336,7 +443,7 @@ function AdminPage() {
     basic.appendChild(g1);
     right.appendChild(basic);
 
-    // Secondary (types)
+    // Typing
     const secondary = document.createElement('div'); secondary.className = 'subsection'; secondary.innerHTML = '<h4>Typing</h4>';
     const g2 = document.createElement('div'); g2.className = 'field-grid';
 
@@ -373,7 +480,7 @@ function AdminPage() {
       p.pokedex = pokedexObj;
     }
 
-    const games = listGames().slice().sort(byReleaseDateAsc);
+    const games = apListGames().slice().sort(byReleaseDateAsc);
     if (!games.length) {
       const empty = document.createElement('div'); empty.className = 'muted'; empty.textContent = 'No games defined yet.';
       grid.appendChild(empty);
@@ -386,16 +493,13 @@ function AdminPage() {
         const title = document.createElement('div'); title.className = 'pokedex-card-title';
         title.innerHTML = `<strong>${escapeHtml(g.title || '(untitled)')}</strong>`;
 
-        // Ensure bucket exists
         const bucket = (p.pokedex[g.id] ||= { regionalDexNumber: '', entry: '' });
 
-        // Regional Dex Number (inline)
         const rd = fieldText('Regional Dex Number', bucket.regionalDexNumber, v => { bucket.regionalDexNumber = v; }).container;
         rd.classList.add('field-inline');
         title.appendChild(rd);
         card.appendChild(title);
 
-        // Entry textarea
         const fwrap = document.createElement('div'); fwrap.className = 'field-grid';
         fwrap.appendChild(fieldTextarea('Pokédex Entry', bucket.entry, v => { bucket.entry = v; }).container);
         card.appendChild(fwrap);
@@ -410,14 +514,35 @@ function AdminPage() {
 
   /* -------- Games editor -------- */
   function renderGameEditor() {
-    let g = selectedId != null ? getGameById(selectedId) : null;
-    const header = rowHeader('Games', [
-      button('Save', () => { alert('Hook this to your store writer if you want persistence.'); }),
-      button('Delete', () => { alert('Hook this to your delete logic.'); })
-    ]);
-    right.appendChild(header);
-
+    let g;
+    if (selectedId != null) g = apGetGameById(selectedId);
     if (!g) { right.appendChild(emptyRow('Select a game to edit or click New.')); return; }
+
+    // --- Header strip (Delete / Undo & status)
+    const header = document.createElement('div');
+    header.className = 'right-header';
+    const titleSide = document.createElement('div');
+    const status = document.createElement('span');
+    status.className = 'pill pill-danger';
+    const setStatus = () => {
+      if (g._deleted) {
+        status.style.display = '';
+        status.textContent = 'Marked for deletion';
+      } else {
+        status.style.display = 'none';
+      }
+    };
+    setStatus();
+    titleSide.appendChild(status);
+
+    const tools = document.createElement('div');
+    tools.className = 'toolbar';
+    tools.appendChild(makeDeleteToggleButton('games', () => g, () => {
+      setStatus();
+      renderList();
+    }));
+    header.append(titleSide, tools);
+    right.appendChild(header);
 
     const preview = document.createElement('div'); preview.className = 'img-preview';
     if (g.imageSlug) setBackground(preview, imageBase().games + encodeURIComponent(String(g.imageSlug)) + '.webp');
@@ -440,7 +565,56 @@ function AdminPage() {
     right.appendChild(form);
   }
 
-  /* ---------------- Shared UI helpers (function declarations = hoisted) ---------------- */
+  /* ---------------- Shared UI helpers ---------------- */
+  // Toggle-style delete button:
+  // - If not deleted: requires arming, then sets _deleted = true
+  // - If deleted: single click to undo
+  function makeDeleteToggleButton(section, getObj, onChange) {
+    const btn = document.createElement('button');
+    btn.className = 'btn danger';
+
+    const label = () => {
+      const obj = getObj();
+      btn.textContent = obj && obj._deleted ? 'Undo Delete' : 'Delete';
+      btn.classList.toggle('is-undo', !!(obj && obj._deleted));
+    };
+    label();
+
+    btn.addEventListener('click', () => {
+      const obj = getObj?.();
+      if (!obj) return;
+
+      // If currently NOT deleted, use the same “Are you sure?” arming pattern before marking.
+      if (!obj._deleted) {
+        if (!btn.dataset.arm) {
+          btn.dataset.arm = '1';
+          btn.textContent = 'Are you sure?';
+          btn.classList.add('notepad_warning');
+          setTimeout(() => {
+            btn.dataset.arm = '';
+            label();
+            btn.classList.remove('notepad_warning');
+          }, 2000);
+          return;
+        }
+        // Confirmed -> mark as deleted
+        obj._deleted = true;
+        btn.dataset.arm = '';
+        btn.classList.remove('notepad_warning');
+        label();
+        onChange?.();
+        return;
+      }
+
+      // If currently deleted -> single-click undo
+      obj._deleted = false;
+      label();
+      onChange?.();
+    });
+
+    return btn;
+  }
+
   function rowHeader(titleText, buttons = []) {
     const header = document.createElement('div'); header.className = 'right-header';
     const title = document.createElement('div'); title.className = 'title';
@@ -495,10 +669,23 @@ function AdminPage() {
     document.body.appendChild(a); a.click(); a.remove();
     URL.revokeObjectURL(url);
   }
+
+  // Build export payloads by skipping any _deleted item.
+  function buildPokemonExport() {
+    return apListPokemon().filter(p => !p?._deleted);
+  }
+  function buildGamesExport() {
+    return apListGames().filter(g => !g?._deleted);
+  }
+
   function downloadAll() {
-    if (activeTab === 'settings') downloadJSON('settings.json', getSettings() || {});
-    else if (activeTab === 'pokemon') downloadJSON('data-pokemon.json', listPokemon());
-    else if (activeTab === 'games') downloadJSON('data-games.json', listGames());
+    if (activeTab === 'settings') {
+      downloadJSON('settings.json', getSettings() || {});
+    } else if (activeTab === 'pokemon') {
+      downloadJSON('data-pokemon.json', buildPokemonExport());
+    } else if (activeTab === 'games') {
+      downloadJSON('data-games.json', buildGamesExport());
+    }
   }
 }
 

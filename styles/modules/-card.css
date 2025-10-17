@@ -12,8 +12,11 @@ CARD MAIN
   display: grid;
   gap: 10px;
   background-color: color-mix(in srgb, var(--dex-color) 6%, var(--g-panel));
-  background-image: var(--ctg);
   transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card[data-type1] {
+  background-image: var(--ctg);
 }
 
 .card:hover {

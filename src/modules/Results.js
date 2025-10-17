@@ -9,8 +9,6 @@ import { DexEntry as DexEntryCard } from './DexEntry.js';
 
 useSidecarCSS(import.meta.url);
 
-
-
 /**
  * Unified results:
  * - Pokémon matches (fields + Pokédex entries, rendered as DexEntry cards)
@@ -27,7 +25,6 @@ export function renderResults({ data, query, options = {} }) {
 
   // POKÉMON
   const pkmnHits = findPokemonHits(data.pokemon || [], terms, isAnd, excludes);
-  pkmnHits.className='result-section-title';
   root.appendChild(sectionTitle(`Pokémon (${pkmnHits.length})`));
   if (!pkmnHits.length) {
     root.appendChild(empty('No Pokémon matched.'));
@@ -36,10 +33,7 @@ export function renderResults({ data, query, options = {} }) {
   }
 
   // CORPUS (auto)
-  const corpusHits = document.createElement('div');
-  corpusHits.appendChild(sectionTitle(`Game Dialogue References`));
-  root.appendChild(corpusHits);
-
+  root.appendChild(sectionTitle(`Game Dialogue References`));
   const corpusWrap = document.createElement('div');
   root.appendChild(corpusWrap);
   renderCorpusAuto(corpusWrap, terms, isAnd, excludes, options.maxLinesPerGame ?? 50);
@@ -47,21 +41,49 @@ export function renderResults({ data, query, options = {} }) {
   return root;
 }
 
-// Strict, hierarchical matcher for Pokémon FIELD searches:
-// 1) First term must be present across ANY field
-// 2) All "+" terms (the rest of `terms`) must also be present (across any fields)
-// 3) Exclude if ANY "-" term appears (across any fields)
+/**
+ * Pokémon matching:
+ * Include a Pokémon card if EITHER:
+ *  - its structured fields match the query, OR
+ *  - ANY of its Pokédex entry texts match the query.
+ * Excludes are applied across both.
+ */
 function findPokemonHits(pokemon, terms, isAnd, excludes) {
   const hits = [];
+  const games = listGames();
 
-  // Normalisers
   const norm = (s) => String(s ?? '').toLowerCase();
+  const contains = (hay, needle) => norm(hay).includes(norm(needle));
+  const containsAll = (hay, needles) => needles.every(n => contains(hay, n));
+  const excludedBy = (hay, ex) => ex?.some(e => contains(hay, e));
+
+  // Map various game keys (emerald / pokemon-emerald / slug) → canonical game.id
+  const mapGameKeyToId = (() => {
+    const map = new Map();
+    for (const g of games) {
+      const candidates = [g.id, g.title, g.imageSlug, g.corpusSlug]
+        .filter(Boolean)
+        .map(normId);
+      for (const c of candidates) map.set(c, g.id);
+    }
+    return (key) => {
+      const k = normId(key);
+      return map.get(k) || key;
+    };
+  })();
+
+  // Normalize entry text for dedupe (trim + collapse spaces + case-insensitive)
+  const normalizeEntryText = (s) => String(s ?? '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
 
   for (const p of pokemon) {
     let relevancy = 0;
     const fieldMatches = [];
+    const dexMatches = [];
 
-    // Build searchable field set (adjust if you have more)
+    // ---- Fields ----
     const fields = {
       id: p.id,
       name: p.name,
@@ -72,91 +94,50 @@ function findPokemonHits(pokemon, terms, isAnd, excludes) {
       type1: p.type1,
       type2: p.type2
     };
+    const values = Object.values(fields).map(v => String(v ?? ''));
+    const haystack = values.join(' • ');
 
-    // Precompute lowercase values for fast cross-field queries
-    const values = Object.values(fields).map(norm);
-    const containsAcrossFields = (needle) => {
-      const n = norm(needle);
-      if (!n) return false;
-      return values.some(v => v.includes(n));
-    };
+    const fieldsPassPositives = isAnd ? containsAll(haystack, terms) : terms.some(t => contains(haystack, t));
+    const fieldsPassExcludes = !excludedBy(haystack, excludes);
 
-    // --- Hierarchical gate for Pokémon-field matching ---
-    const base = terms?.[0];
-    if (!base || !containsAcrossFields(base)) {
-      // If the FIRST term isn't found anywhere in Pokémon fields, skip this Pokémon entirely
-      continue;
-    }
-
-    // All remaining "+" terms must be present across fields
-    const plusTerms = (terms || []).slice(1);
-    if (plusTerms.length && !plusTerms.every(containsAcrossFields)) {
-      continue;
-    }
-
-    // Exclude if any "-" term is present across fields
-    if (excludes?.length && excludes.some(containsAcrossFields)) {
-      continue;
-    }
-    // ----------------------------------------------------
-
-    // If we pass the gate, collect per-field matches & relevancy as you had before.
-    // We keep per-field matching "OR" style for relevancy so multi-field hits score higher.
-    for (const [label, value] of Object.entries(fields)) {
-      const s = String(value ?? '');
-      if (!s) continue;
-      // NOTE: keep isAnd=false here so each field independently contributes to relevancy
-      if (textMatchesTerms(s, terms, /* isAnd */ false)) {
-        relevancy++;
-        fieldMatches.push({ label, value: s });
-      }
-    }
-
-    // ---- Dex/corpus text matching (kept compatible & defensive) ----
-    // If your data has per-Pokémon text blocks (e.g., p.pokedex, p.notes), we try to match them too.
-    // This block is defensive: it won't break if those props don't exist.
-    const dexMatchesByText = new Map();
-
-    const considerTextBlock = (label, raw) => {
-      if (!raw) return;
-      const text = String(raw);
-      // Keep your existing term semantics for text blocks:
-      const passesPositives = terms?.length ? textMatchesTerms(text, terms, isAnd) : true;
-      const blocked = excludes?.length ? excludes.some(ex => norm(text).includes(norm(ex))) : false;
-      if (passesPositives && !blocked) {
-        // Deduplicate by exact text so the same snippet doesn't appear twice
-        const key = text;
-        if (!dexMatchesByText.has(key)) {
-          dexMatchesByText.set(key, { label, text });
-          // Optionally bump relevancy a little for each matched text block:
+    if (fieldsPassPositives && fieldsPassExcludes) {
+      for (const [label, value] of Object.entries(fields)) {
+        if (!value) continue;
+        if (textMatchesTerms(String(value), terms, /*isAnd*/ false)) {
           relevancy++;
+          fieldMatches.push({ label, value: String(value) });
         }
       }
-    };
-
-    // Common shapes you might have; harmless if absent:
-    // 1) p.pokedex is an object of keyed entries
-    if (p && p.pokedex && typeof p.pokedex === 'object') {
-      for (const [k, v] of Object.entries(p.pokedex)) {
-        considerTextBlock(`pokedex:${k}`, v);
-      }
     }
-    // 2) p.notes or p.description text fields
-    if (p && p.notes) considerTextBlock('notes', p.notes);
-    if (p && p.description) considerTextBlock('description', p.description);
-    // ----------------------------------------------------------------
 
-    if (relevancy > 0 || dexMatchesByText.size) {
-      hits.push({
-        p,
-        relevancy,
-        fieldMatches,
-        dexMatches: [...dexMatchesByText.values()]
-      });
+    // ---- Pokédex text (per game) with DEDUPE by entry text ----
+    const dexObj = canonicalPokedex(p?.pokedex);
+    const seenEntryKeys = new Set(); // normalized text → keep first game only
+
+    for (const [key, entryText] of Object.entries(dexObj)) {
+      if (!entryText) continue;
+
+      const text = String(entryText);
+      const normKey = normalizeEntryText(text);
+      if (seenEntryKeys.has(normKey)) continue;            // skip duplicates
+      // evaluate match before keeping
+      const positives = terms.length ? textMatchesTerms(text, terms, isAnd) : true;
+      const blocked = excludes?.length ? excludedBy(text, excludes) : false;
+      if (!positives || blocked) continue;
+
+      seenEntryKeys.add(normKey);
+      const gameId = mapGameKeyToId(key);
+      dexMatches.push({ gameId, entry: text });
+      relevancy++; // bump relevancy for each (unique) matching entry
+    }
+
+    // Include if either fields or (deduped) dex matched
+    if ((fieldMatches.length || dexMatches.length) && !excludedBy(haystack, excludes)) {
+      hits.push({ p, relevancy, fieldMatches, dexMatches });
     }
   }
 
-  // Sort by relevancy desc, then by name asc (stable with missing names)
+  // Sort by relevancy, then by name
   hits.sort((A, B) =>
     (B.relevancy - A.relevancy) ||
     String(A.p?.name || '').localeCompare(String(B.p?.name || ''))
@@ -177,10 +158,8 @@ function renderPokemonHit(hit, terms) {
 
   const img = document.createElement('div'); img.className='result-img'; lazyBg(img, PKMN_IMG(p.id));
   const title = document.createElement('div');
-  title.innerHTML = `<strong>${p.name}</strong>` +
-    (p.form ? ` <span class="muted">• ${p.form}</span>` : '')
-    //+ ` <span class="pill">#${String(p.id)}</span>`
-    ;
+  title.innerHTML = `<strong>${escape(p.name)}</strong>` +
+    (p.form ? ` <span class="muted">• ${escape(p.form)}</span>` : '');
   header.append(img, title);
   card.appendChild(header);
 
@@ -188,7 +167,6 @@ function renderPokemonHit(hit, terms) {
   if (fieldMatches.length) {
     const fieldsBox = document.createElement('div');
     fieldsBox.className='fieldsBox';
-    // fieldsBox.innerHTML = `<div class="section-title">Fields</div>`;
     const list = document.createElement('div');
     list.className='fields';
     for (const m of fieldMatches) {
@@ -201,11 +179,10 @@ function renderPokemonHit(hit, terms) {
     header.appendChild(fieldsBox);
   }
 
-  // Pokédex matches (rendered as DexEntry cards with +📓 button)
+  // Pokédex matches (rendered as DexEntry cards)
   if (dexMatches.length) {
     const dexBox = document.createElement('div');
     dexBox.className='dexBox';
-    // dexBox.innerHTML = `<div class="section-title">Pokédex entries</div>`;
     const list = document.createElement('div'); list.className='dex';
     for (const dm of dexMatches) {
       const g = getGameById(dm.gameId) || { id: dm.gameId, title: dm.gameId, colorHex: '#888888' };
@@ -254,8 +231,6 @@ async function renderCorpusAuto(mount, terms, isAnd, excludes, maxPerGame) {
 
   const results = await Promise.all(jobs);
   const totalHits = results.reduce((sum, { matches }) => sum + (matches?.length || 0), 0);
-  const headerEl = mount.querySelector('.result-section-title');
-  if (headerEl) headerEl.textContent = `Game Dialogue References (${totalHits})`;
   let any = false;
   for (const { g, matches } of results) {
     if (!matches.length) continue;
@@ -272,11 +247,10 @@ function renderCorpusCard(g, matches, terms) {
   const header = document.createElement('div'); header.className='result-header';
   const img = document.createElement('div'); img.className='result-img'; if (g.imageSlug) lazyBg(img, GAME_IMG(g.imageSlug));
   const title = document.createElement('div');
-  const date = g.releaseDate ? new Date(g.releaseDate).toISOString().slice(0,10) : '—';
   title.innerHTML = `
     <strong>Pokémon ${escape(g.title || '(Game)')}</strong>
     <div class="muted">Game Dialogue</div>
-    `;
+  `;
   header.append(img, title);
   const score = document.createElement('div'); score.innerHTML = `<span class="pill score">${matches.length}</span>`;
   header.appendChild(score);
@@ -286,12 +260,27 @@ function renderCorpusCard(g, matches, terms) {
   const list = document.createElement('div');
   for (const m of matches) {
     const p = document.createElement('p'); p.className='corpus_line';
-    const ln = document.createElement('span'); ln.className='muted'; ln.textContent = `${m.idx}. `;
+
+    // Line index as a button that jumps to the game's corpus line
+    const ln = document.createElement('button');
+    ln.type = 'button';
+    ln.className = 'muted line-jump';
+    ln.title = `Open ${g.title || 'game'} corpus at line ${m.idx}`;
+    ln.textContent = `${m.idx}.`;
+    ln.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      const slug = encodeURIComponent(g.corpusSlug || g.id);
+      location.hash = `#/games/${slug}?tab=corpus&line=${m.idx}`;
+    });
+
+    const space = document.createTextNode(' ');
     const text = document.createElement('span'); text.innerHTML = highlightHTMLMulti(m.text, terms);
     const add = document.createElement('button'); add.className='btn'; add.textContent = '+📓';
     add.title = 'Add to Notepad';
     add.addEventListener('click', ()=> addCorpusLineToNotepad({ game: g, lineNumber: m.idx, lineText: m.text }));
-    p.append(ln, text, add);
+
+    p.append(ln, space, text, add);
     list.appendChild(p);
   }
   box.appendChild(list); card.appendChild(box);
@@ -302,3 +291,50 @@ function renderCorpusCard(g, matches, terms) {
 function sectionTitle(t){ const d=document.createElement('div'); d.className='result-section-title'; d.textContent=t; return d; }
 function empty(t){ const d=document.createElement('div'); d.className='result muted'; d.textContent=t; return d; }
 function escape(s){ return String(s ?? '').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function normId(s) {
+  return String(s || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+/**
+ * Canonicalise p.pokedex into { [gameKey]: entryText }
+ * Accepts shapes like:
+ *  - { emerald: { entry: '...', regionalDexNumber: '...' }, ... }
+ *  - { emerald: '...' }
+ *  - [ { version:'emerald', entry:'...' }, ... ]
+ */
+function canonicalPokedex(src) {
+  const out = {};
+  if (!src) return out;
+
+  const pullText = (v) => {
+    if (v == null) return '';
+    if (typeof v === 'string') return v;
+    // common shapes
+    return String(v.entry ?? v.text ?? v.description ?? '');
+  };
+
+  if (Array.isArray(src)) {
+    for (const e of src) {
+      const key = normId(String(e?.version ?? e?.gameId ?? e?.game ?? '').trim());
+      if (!key) continue;
+      const txt = pullText(e);
+      if (txt) out[key] = txt;
+    }
+    return out;
+  }
+
+  if (typeof src === 'object') {
+    for (const [k, v] of Object.entries(src)) {
+      const key = normId(k);
+      const txt = pullText(v);
+      if (key && txt) out[key] = txt;
+    }
+    return out;
+  }
+
+  return out;
+}

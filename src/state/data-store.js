@@ -78,12 +78,12 @@ export function imageBase() {
   return def;
 }
 
-/* ----------------------- Pokemon/Games API ----------------------- */
+/* ----------------------- Pokemon/Games READ API ----------------------- */
 
 export const listPokemon = () => POKEMON.slice();
-export const listGames = () => GAMES.slice();
+export const listGames   = () => GAMES.slice();
 export const getPokemonById = (id) => INDEX.byPid.get(String(id)) || null;
-export const getGameById = (id) => INDEX.byGid.get(String(id)) || null;
+export const getGameById    = (id) => INDEX.byGid.get(String(id)) || null;
 
 // Sorting helpers
 export function byReleaseDateAsc(a,b) {
@@ -106,6 +106,61 @@ function parseIdForSort(raw) {
   const m = id.match(/^(\d+)(.*)$/);
   return m ? { num: parseInt(m[1], 10), suffix: m[2] || '' }
            : { num: Number.POSITIVE_INFINITY, suffix: id };
+}
+
+const DELETED = { pokemon: new Set(), games: new Set() };
+
+/* ----------------------- Mutation: Delete ----------------------- */
+/**
+ * Remove a Pokémon from the in-memory store by id.
+ * No-op if the id is not found.
+ */
+export function removePokemonById(id) {
+  const key = String(id);
+  let changed = false;
+
+  DELETED.pokemon.add(key);
+
+  // Remove from array
+  const beforeLen = POKEMON.length;
+  POKEMON = POKEMON.filter(p => String(p.id) !== key);
+  if (POKEMON.length !== beforeLen) changed = true;
+
+  // Remove from index
+  if (INDEX.byPid.delete(key)) changed = true;
+
+  if (changed) indexify();
+  return changed;
+}
+
+/**
+ * Remove a Game from the in-memory store by id.
+ * No-op if the id is not found.
+ */
+export function removeGameById(id) {
+  const key = String(id);
+  let changed = false;
+
+  DELETED.games.add(key);
+
+  // Remove from array
+  const beforeLen = GAMES.length;
+  GAMES = GAMES.filter(g => String(g.id) !== key);
+  if (GAMES.length !== beforeLen) changed = true;
+
+  // Remove from index
+  if (INDEX.byGid.delete(key)) changed = true;
+
+  if (changed) indexify();
+  return changed;
+}
+
+export function exportPokemon() {
+  // Always reflect current in-memory list, minus any tombstoned ids
+  return POKEMON.filter(p => !DELETED.pokemon.has(String(p?.id ?? '')));
+}
+export function exportGames() {
+  return GAMES.filter(g => !DELETED.games.has(String(g?.id ?? '')));
 }
 
 /* ----------------------- Utils ----------------------- */
