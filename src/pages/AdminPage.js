@@ -524,11 +524,34 @@ function AdminPage() {
   }
 
   /* -------- Games editor -------- */
-  function renderGameEditor() {
+  function renderGameEditor(opts) {
     let g;
-    if (selectedId != null) g = apGetGameById(selectedId);
-    if (!g) { right.appendChild(emptyRow('Select a game to edit or click New.')); return; }
-
+  
+    // Support "Add" -> create a new, blank game entry and edit it immediately
+    if (opts?.__new__) {
+      g = {
+        id: '',
+        title: '',
+        releaseDate: '',
+        console: '',
+        colorHex: '',
+        imageSlug: '',
+        corpusSlug: '',
+        _deleted: false,
+      };
+      ADMIN.games.push(g);
+      // If they haven't typed an ID yet, keep selectedId null; UI still edits `g` directly.
+      // Once they type an ID, you'll see it in the left list after renderList().
+      selectedId = g.id || null;
+    } else if (selectedId != null) {
+      g = apGetGameById(selectedId);
+    }
+  
+    if (!g) {
+      right.appendChild(emptyRow('Select a game to edit or click New.'));
+      return;
+    }
+  
     // --- Header strip (Delete / Undo & status)
     const header = document.createElement('div');
     header.className = 'right-header';
@@ -545,7 +568,7 @@ function AdminPage() {
     };
     setStatus();
     titleSide.appendChild(status);
-
+  
     const tools = document.createElement('div');
     tools.className = 'toolbar';
     tools.appendChild(makeDeleteToggleButton('games', () => g, () => {
@@ -554,27 +577,43 @@ function AdminPage() {
     }));
     header.append(titleSide, tools);
     right.appendChild(header);
-
-    const preview = document.createElement('div'); preview.className = 'img-preview';
-    if (g.imageSlug) setBackground(preview, imageBase().games + encodeURIComponent(String(g.imageSlug)) + '.webp');
+  
+    // Image preview
+    const preview = document.createElement('div'); 
+    preview.className = 'img-preview';
+    if (g.imageSlug) {
+      setBackground(preview, imageBase().games + encodeURIComponent(String(g.imageSlug)) + '.webp');
+    }
     right.appendChild(preview);
-
-    const form = document.createElement('div'); form.className = 'form-grid';
-    form.appendChild(fieldText('ID', g.id || '', v => { g.id = v; }).container);
+  
+    // Form fields
+    const form = document.createElement('div'); 
+    form.className = 'form-grid';
+  
+    form.appendChild(fieldText('ID', g.id || '', v => {
+      g.id = v;
+      // After user types an ID, reflect it in selection/list
+      selectedId = v || null;
+      renderList();
+    }).container);
+  
     form.appendChild(fieldText('Title', g.title || '', v => { g.title = v; }).container);
     form.appendChild(fieldText('Release Date (YYYY-MM-DD)', g.releaseDate || '', v => { g.releaseDate = v; }).container);
     form.appendChild(fieldText('Console', g.console || '', v => { g.console = v; }).container);
     form.appendChild(fieldText('Colour Hex', g.colorHex || '', v => { g.colorHex = v; }).container);
+  
     form.appendChild(fieldText('Image Slug', g.imageSlug || '', v => {
       g.imageSlug = v;
       if (v) setBackground(preview, imageBase().games + encodeURIComponent(String(v)) + '.webp');
       else preview.style.backgroundImage = 'none';
+      renderList();
     }).container);
-    form.appendChild(
-      fieldText('Corpus Slug (corpus/slug.txt)', g.corpusSlug || '', v => { g.corpusSlug = v; }).container
-    );
+  
+    form.appendChild(fieldText('Corpus Slug (corpus/slug.txt)', g.corpusSlug || '', v => { g.corpusSlug = v; }).container);
+  
     right.appendChild(form);
   }
+  
 
   /* ---------------- Shared UI helpers ---------------- */
   // Toggle-style delete button:

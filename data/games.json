@@ -6,7 +6,8 @@
     "console": "Game Boy",
     "colorHex": "#A92823",
     "imageSlug": "red",
-    "corpusSlug": ""
+    "corpusSlug": "",
+    "_deleted": false
   },
   {
     "id": "blue",
@@ -15,7 +16,8 @@
     "console": "Game Boy",
     "colorHex": "#285A98",
     "imageSlug": "blue",
-    "corpusSlug": ""
+    "corpusSlug": "",
+    "_deleted": false
   },
   {
     "id": "yellow",
@@ -24,7 +26,8 @@
     "console": "Game Boy",
     "colorHex": "#DEBF43",
     "imageSlug": "yellow",
-    "corpusSlug": ""
+    "corpusSlug": "",
+    "_deleted": false
   },
   {
     "id": "gold",
@@ -33,7 +36,8 @@
     "console": "Game Boy Color",
     "colorHex": "#9B9061",
     "imageSlug": "gold",
-    "corpusSlug": ""
+    "corpusSlug": "",
+    "_deleted": false
   },
   {
     "id": "silver",
@@ -42,7 +46,8 @@
     "console": "Game Boy Color",
     "colorHex": "#8B919B",
     "imageSlug": "silver",
-    "corpusSlug": ""
+    "corpusSlug": "",
+    "_deleted": false
   },
   {
     "id": "crystal",
@@ -51,7 +56,8 @@
     "console": "Game Boy Color",
     "colorHex": "#6E75AE",
     "imageSlug": "crystal",
-    "corpusSlug": ""
+    "corpusSlug": "",
+    "_deleted": false
   },
   {
     "id": "ruby",
@@ -60,7 +66,8 @@
     "console": "Game Boy Advance",
     "colorHex": "#9E3A29",
     "imageSlug": "ruby",
-    "corpusSlug": "ruby-sapphire-en_msg"
+    "corpusSlug": "ruby-sapphire-en_msg",
+    "_deleted": false
   },
   {
     "id": "sapphire",
@@ -69,7 +76,8 @@
     "console": "Game Boy Advance",
     "colorHex": "#223F6E",
     "imageSlug": "sapphire",
-    "corpusSlug": ""
+    "corpusSlug": "",
+    "_deleted": false
   },
   {
     "id": "emerald",
@@ -78,7 +86,8 @@
     "console": "Game Boy Advance",
     "colorHex": "#61A84D",
     "imageSlug": "emerald",
-    "corpusSlug": "emerald-en_msg"
+    "corpusSlug": "emerald-en_msg",
+    "_deleted": false
   },
   {
     "id": "firered",
@@ -87,7 +96,8 @@
     "console": "Game Boy Advance",
     "colorHex": "#DC612F",
     "imageSlug": "fire-red",
-    "corpusSlug": "f-red-l-green-en_msg"
+    "corpusSlug": "f-red-l-green-en_msg",
+    "_deleted": false
   },
   {
     "id": "leafgreen",
@@ -96,7 +106,8 @@
     "console": "Game Boy Advance",
     "colorHex": "#A0B639",
     "imageSlug": "leaf-green",
-    "corpusSlug": ""
+    "corpusSlug": "",
+    "_deleted": false
   },
   {
     "id": "diamond",
@@ -105,7 +116,8 @@
     "console": "Nintendo DS",
     "colorHex": "#25597A",
     "imageSlug": "diamond",
-    "corpusSlug": "diamond-pearl-en_msg"
+    "corpusSlug": "diamond-pearl-en_msg",
+    "_deleted": false
   },
   {
     "id": "pearl",
@@ -114,7 +126,8 @@
     "console": "Nintendo DS",
     "colorHex": "#8C5157",
     "imageSlug": "pearl",
-    "corpusSlug": ""
+    "corpusSlug": "",
+    "_deleted": false
   },
   {
     "id": "platinum",
@@ -123,7 +136,8 @@
     "console": "Nintendo DS",
     "colorHex": "#373C4F",
     "imageSlug": "platinum",
-    "corpusSlug": "platinum-en_msg"
+    "corpusSlug": "platinum-en_msg",
+    "_deleted": false
   },
   {
     "id": "heartgold",
@@ -132,7 +146,8 @@
     "console": "Nintendo DS",
     "colorHex": "#C3A14B",
     "imageSlug": "heart-gold",
-    "corpusSlug": "h-gold-s-silver-en_msg"
+    "corpusSlug": "h-gold-s-silver-en_msg",
+    "_deleted": false
   },
   {
     "id": "soulsilver",
@@ -141,7 +156,8 @@
     "console": "Nintendo DS",
     "colorHex": "#B4B9BB",
     "imageSlug": "soul-silver",
-    "corpusSlug": ""
+    "corpusSlug": "",
+    "_deleted": false
   },
   {
     "id": "black",
@@ -150,7 +166,8 @@
     "console": "Nintendo DS",
     "colorHex": "#222222",
     "imageSlug": "black",
-    "corpusSlug": "blackwhite-en_script"
+    "corpusSlug": "blackwhite-en_script",
+    "_deleted": false
   },
   {
     "id": "white",
@@ -159,7 +176,8 @@
     "console": "Nintendo DS",
     "colorHex": "#E1E1E1",
     "imageSlug": "white",
-    "corpusSlug": ""
+    "corpusSlug": "",
+    "_deleted": false
   },
   {
     "id": "black-2",
@@ -168,7 +186,8 @@
     "console": "Nintendo DS",
     "colorHex": "#75BDE0",
     "imageSlug": "black-2",
-    "corpusSlug": "black2white2-en_script"
+    "corpusSlug": "black2white2-en_script",
+    "_deleted": false
   },
   {
     "id": "white-2",
@@ -177,7 +196,8 @@
     "console": "Nintendo DS",
     "colorHex": "#F4C654",
     "imageSlug": "white-2",
-    "corpusSlug": ""
+    "corpusSlug": "",
+    "_deleted": false
   },
   {
     "id": "x",
@@ -186,7 +206,8 @@
     "console": "Nintendo 3DS",
     "colorHex": "#275D96",
     "imageSlug": "x",
-    "corpusSlug": "x-y-en_script"
+    "corpusSlug": "x-y-en_script",
+    "_deleted": false
   },
   {
     "id": "y",
@@ -195,7 +216,8 @@
     "console": "Nintendo 3DS",
     "colorHex": "#BA353A",
     "imageSlug": "y",
-    "corpusSlug": ""
+    "corpusSlug": "",
+    "_deleted": false
   },
   {
     "id": "omega-ruby",
@@ -204,7 +226,8 @@
     "console": "Nintendo 3DS",
     "colorHex": "#DA6B3A",
     "imageSlug": "omega-ruby",
-    "corpusSlug": "o-ruby-a-sapphire-en_script"
+    "corpusSlug": "o-ruby-a-sapphire-en_script",
+    "_deleted": false
   },
   {
     "id": "alpha-sapphire",
@@ -213,7 +236,8 @@
     "console": "Nintendo 3DS",
     "colorHex": "#5FC2D0",
     "imageSlug": "alpha-sapphire",
-    "corpusSlug": ""
+    "corpusSlug": "",
+    "_deleted": false
   },
   {
     "id": "sun",
@@ -222,7 +246,8 @@
     "console": "Nintendo 3DS",
     "colorHex": "#EEA240",
     "imageSlug": "sun",
-    "corpusSlug": "sun-moon-en_script"
+    "corpusSlug": "sun-moon-en_script",
+    "_deleted": false
   },
   {
     "id": "moon",
@@ -231,7 +256,8 @@
     "console": "Nintendo 3DS",
     "colorHex": "#593486",
     "imageSlug": "moon",
-    "corpusSlug": ""
+    "corpusSlug": "",
+    "_deleted": false
   },
   {
     "id": "ultra-sun",
@@ -240,7 +266,8 @@
     "console": "Nintendo 3DS",
     "colorHex": "#E3A754",
     "imageSlug": "ultra-sun",
-    "corpusSlug": "u-sun-u-moon-en_script"
+    "corpusSlug": "u-sun-u-moon-en_script",
+    "_deleted": false
   },
   {
     "id": "ultra-moon",
@@ -249,7 +276,8 @@
     "console": "Nintendo 3DS",
     "colorHex": "#4DA4DC",
     "imageSlug": "ultra-moon",
-    "corpusSlug": ""
+    "corpusSlug": "",
+    "_deleted": false
   },
   {
     "id": "lets-go-pikachu",
@@ -258,7 +286,8 @@
     "console": "Nintendo Switch",
     "colorHex": "#EFD35E",
     "imageSlug": "lets-go-pikachu",
-    "corpusSlug": "lg-pikachu-eevee-en_script"
+    "corpusSlug": "lg-pikachu-eevee-en_script",
+    "_deleted": false
   },
   {
     "id": "lets-go-eevee",
@@ -267,7 +296,8 @@
     "console": "Nintendo Switch",
     "colorHex": "#D3A167",
     "imageSlug": "lets-go-eevee",
-    "corpusSlug": ""
+    "corpusSlug": "",
+    "_deleted": false
   },
   {
     "id": "sword",
@@ -276,7 +306,8 @@
     "console": "Nintendo Switch",
     "colorHex": "#469DE1",
     "imageSlug": "sword",
-    "corpusSlug": "sword-shield-en_script"
+    "corpusSlug": "sword-shield-en_script",
+    "_deleted": false
   },
   {
     "id": "shield",
@@ -285,25 +316,28 @@
     "console": "Nintendo Switch",
     "colorHex": "#D22D5B",
     "imageSlug": "shield",
-    "corpusSlug": ""
+    "corpusSlug": "",
+    "_deleted": false
   },
   {
     "id": "the-isle-of-armor",
     "title": "The Isle Of Armor",
     "releaseDate": "2020-06-17",
-    "console": "",
+    "console": "Nintendo Switch",
     "colorHex": "#EEC150",
     "imageSlug": "isle-of-armor",
-    "corpusSlug": ""
+    "corpusSlug": "",
+    "_deleted": false
   },
   {
     "id": "the-crown-tundra",
     "title": "The Crown Tundra",
     "releaseDate": "2020-10-22",
-    "console": "",
+    "console": "Nintendo Switch",
     "colorHex": "#469C8A",
     "imageSlug": "crown-tundra",
-    "corpusSlug": ""
+    "corpusSlug": "",
+    "_deleted": false
   },
   {
     "id": "brilliant-diamond",
@@ -312,7 +346,8 @@
     "console": "Nintendo Switch",
     "colorHex": "#4999C8",
     "imageSlug": "brilliant-diamond",
-    "corpusSlug": "b-diamond-s-pearl-en_message"
+    "corpusSlug": "b-diamond-s-pearl-en_message",
+    "_deleted": false
   },
   {
     "id": "shining-pearl",
@@ -321,7 +356,8 @@
     "console": "Nintendo Switch",
     "colorHex": "#F3B8D7",
     "imageSlug": "shining-pearl",
-    "corpusSlug": ""
+    "corpusSlug": "",
+    "_deleted": false
   },
   {
     "id": "legends-arceus",
@@ -330,7 +366,8 @@
     "console": "Nintendo Switch",
     "colorHex": "#89C194",
     "imageSlug": "legends-arceus",
-    "corpusSlug": "legends-arceus-en_script"
+    "corpusSlug": "legends-arceus-en_script",
+    "_deleted": false
   },
   {
     "id": "scarlet",
@@ -339,7 +376,8 @@
     "console": "Nintendo Switch",
     "colorHex": "#992842",
     "imageSlug": "scarlet",
-    "corpusSlug": "scarlet-violet-en_script"
+    "corpusSlug": "scarlet-violet-en_script",
+    "_deleted": false
   },
   {
     "id": "violet",
@@ -348,24 +386,37 @@
     "console": "Nintendo Switch",
     "colorHex": "#6C2A7E",
     "imageSlug": "violet",
-    "corpusSlug": ""
+    "corpusSlug": "",
+    "_deleted": false
   },
   {
     "id": "the-teal-mask",
     "title": "The Teal Mask",
     "releaseDate": "2023-09-08",
-    "console": "",
+    "console": "Nintendo Switch",
     "colorHex": "#56B0A6",
     "imageSlug": "teal-mask",
-    "corpusSlug": ""
+    "corpusSlug": "",
+    "_deleted": false
   },
   {
     "id": "the-indigo-disk",
     "title": "The Indigo Disk",
     "releaseDate": "2024-11-15",
-    "console": "",
+    "console": "Nintendo Switch",
     "colorHex": "#64B4CE",
     "imageSlug": "indigo-disk",
-    "corpusSlug": ""
+    "corpusSlug": "",
+    "_deleted": false
+  },
+  {
+    "id": "legends-za",
+    "title": "Legends Z-A",
+    "releaseDate": "2025-10-16",
+    "console": "Nintendo Switch",
+    "colorHex": "#81BE91",
+    "imageSlug": "legends-za",
+    "corpusSlug": "legends-za-en_script",
+    "_deleted": false
   }
 ]
