@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Story Planner — Admin • Timeline • Theory</title>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+  <header class="app-header">
+    <h1>Story Planner</h1>
+    <nav class="tabs" role="tablist" aria-label="Views">
+      <button class="tab active" data-view="admin" role="tab" aria-selected="true">Admin</button>
+      <button class="tab" data-view="timeline" role="tab" aria-selected="false">Timeline</button>
+      <button class="tab" data-view="theory" role="tab" aria-selected="false">Theory</button>
+    </nav>
+    <div class="header-actions">
+      <button id="btn-export" title="Download data.js of your project">⬇️ Export</button>
+      <label class="import-label" title="Import a previously saved data.js">
+        ⬆️ Import
+        <input type="file" id="file-import" accept=".js,.json" hidden>
+      </label>
+      <button id="btn-reset" title="Reset all data (keeps node positions)">♻️ Reset</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- ADMIN VIEW -->
+    <section id="view-admin" class="view active" aria-labelledby="Admin">
+      <div class="admin">
+        <aside class="sidebar">
+          <h2>Types</h2>
+          <ul class="types">
+            <li><button data-type="arcs" class="type-btn active">Arcs</button></li>
+            <li><button data-type="plotPoints" class="type-btn">Plot Points</button></li>
+            <li><button data-type="locations" class="type-btn">Locations</button></li>
+            <li><button data-type="characters" class="type-btn">Characters</button></li>
+            <li><button data-type="items" class="type-btn">Items</button></li>
+          </ul>
+          <div class="search">
+            <input id="search-list" type="search" placeholder="Filter list…">
+          </div>
+          <div class="list" id="entity-list" aria-live="polite"></div>
+          <div class="sidebar-actions">
+            <button id="btn-new">＋ New</button>
+            <button id="btn-duplicate">⎘ Duplicate</button>
+            <button id="btn-delete" class="danger">🗑 Delete</button>
+          </div>
+        </aside>
+
+        <section class="editor">
+          <h2 id="form-title">Edit</h2>
+          <form id="entity-form" autocomplete="off">
+            <div class="row two">
+              <label>Name
+                <input name="name" required placeholder="e.g., Inciting Incident">
+              </label>
+              <label data-for="plotPoints" class="only plotPoints">Order
+                <input name="order" type="number" step="1" min="0" placeholder="0">
+              </label>
+            </div>
+
+            <label>Details
+              <textarea name="details" rows="5" placeholder="Longer description…"></textarea>
+            </label>
+
+            <!-- PlotPoint relationships -->
+            <div class="only plotPoints">
+              <h3>Relationships (Plot Point)</h3>
+              <div class="row three">
+                <label>Arc
+                  <input name="pp_arc" list="dlist-arcs" placeholder="Arc name">
+                </label>
+                <label>Location
+                  <input name="pp_location" list="dlist-locations" placeholder="Location name">
+                </label>
+                <label>Characters (comma separated)
+                  <input name="pp_characters" placeholder="e.g., Alice, Bob">
+                </label>
+              </div>
+            </div>
+
+            <details>
+              <summary>Custom Relationships (any type ↔ any type)</summary>
+              <p class="help">Each relationship states the <em>Name</em> of the target object and a free-text <em>Label</em> describing the type of relationship.</p>
+              <div id="rel-list"></div>
+              <div class="rel-new">
+                <select id="rel-new-type">
+                  <option value="arcs">Arc</option>
+                  <option value="plotPoints">Plot Point</option>
+                  <option value="locations">Location</option>
+                  <option value="characters">Character</option>
+                  <option value="items">Item</option>
+                </select>
+                <input id="rel-new-name" placeholder="Target object name" list="dlist-all">
+                <input id="rel-new-label" placeholder="Label (e.g., mentor, foreshadows, hidden at…)">
+                <button type="button" id="rel-add">Add</button>
+              </div>
+            </details>
+
+            <datalist id="dlist-arcs"></datalist>
+            <datalist id="dlist-locations"></datalist>
+            <datalist id="dlist-characters"></datalist>
+            <datalist id="dlist-all"></datalist>
+
+            <div class="toolbar">
+              <button type="submit" id="btn-save">💾 Save</button>
+              <button type="button" id="btn-save-close">✅ Save & Close</button>
+            </div>
+          </form>
+        </section>
+      </div>
+    </section>
+
+    <!-- TIMELINE VIEW -->
+    <section id="view-timeline" class="view" aria-labelledby="Timeline">
+      <div class="timeline-toolbar">
+        <label>Show arc color:
+          <select id="timeline-arc-color">
+            <option value="none">None</option>
+            <option value="byArc">By Arc (hash color)</option>
+          </select>
+        </label>
+      </div>
+      <div class="timeline-viewport">
+        <div id="timeline" class="timeline" role="list"></div>
+      </div>
+    </section>
+
+    <!-- THEORY VIEW -->
+    <section id="view-theory" class="view" aria-labelledby="Theory">
+      <div class="theory-stage-wrap">
+        <svg id="links-svg" class="links-svg" aria-hidden="true"></svg>
+        <div id="theory-stage" class="theory-stage" aria-live="polite"></div>
+      </div>
+      <div class="legend">
+        <span class="badge arc">Arc</span>
+        <span class="badge plot">Plot</span>
+        <span class="badge loc">Location</span>
+        <span class="badge char">Character</span>
+        <span class="badge item">Item</span>
+      </div>
+    </section>
+  </main>
+
+  <!-- POPUP -->
+  <dialog id="editor-dialog">
+    <form method="dialog" id="dialog-form">
+      <h3 id="dialog-title">Edit</h3>
+      <p><label>Details<br>
+        <textarea id="dialog-details" rows="6"></textarea>
+      </label></p>
+
+      <fieldset>
+        <legend>Add Relationship</legend>
+        <div class="row three">
+          <select id="dlg-rel-type">
+            <option value="arcs">Arc</option>
+            <option value="plotPoints">Plot Point</option>
+            <option value="locations">Location</option>
+            <option value="characters">Character</option>
+            <option value="items">Item</option>
+          </select>
+          <input id="dlg-rel-name" placeholder="Target name" list="dlist-all">
+          <input id="dlg-rel-label" placeholder="Label">
+        </div>
+        <div class="dlg-rel-actions">
+          <button type="button" id="dlg-add-rel">Add</button>
+        </div>
+        <div id="dlg-rel-list" class="dlg-rel-list"></div>
+      </fieldset>
+
+      <menu>
+        <button value="cancel">Cancel</button>
+        <button id="dlg-save" value="default">Save</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
