@@ -151,12 +151,15 @@ function renderPokemonHit(hit, terms) {
   setTypeData(card, p);
 
   // Header (clickable to open detail)
-  const header = document.createElement('div'); header.className='result-header clickable';
+  const header = document.createElement('div');
+  header.className='result-header clickable';
   header.addEventListener('click', () => location.hash = `#/pokemon/${encodeURIComponent(p.id)}`);
 
-  const img = document.createElement('div'); img.className='result-img'; lazyBg(img, PKMN_IMG(p.id));
+  const img = document.createElement('div');
+  img.className='result-img'; lazyBg(img, PKMN_IMG(p.id));
   const title = document.createElement('div');
   title.innerHTML = `<strong>${escape(p.name)}</strong>` +
+  ` <span class="muted">#${escape(p.id)}</span>` +
     (p.form ? ` <span class="muted">• ${escape(p.form)}</span>` : '');
   header.append(img, title);
   card.appendChild(header);
